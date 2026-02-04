@@ -1,0 +1,10 @@
+{
+	"id": "obsidian-export-html",
+	"name": "Export HTML",
+	"version": "1.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "Export notes as a single-file, blue-themed interactive HTML.",
+	"author": "Me",
+	"authorUrl": "",
+	"isDesktopOnly": true
+}
