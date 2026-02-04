@@ -6,22 +6,22 @@ export interface PageData {
     toc: { text: string; level: number; id: string }[];
 }
 
-export function getTemplate(pages: PageData[], defaultTitle: string) {
+export function getTemplate(pages: PageData[], defaultTitle: string, settings: { showFooter: boolean; centerContent: boolean } = { showFooter: true, centerContent: true }) {
     const dataScript = `const WIKI_DATA = ${JSON.stringify(pages)};`;
     const isSinglePage = pages.length === 1;
 
     // ==========================================
-    // 1. SVG 图标 (内嵌)
+    // 1. SVG 图标
     // ==========================================
     const svgSun = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`;
     const svgMoon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
     const svgMenu = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 4H21V6H3V4ZM3 11H21V13H3V11ZM3 18H21V20H3V18Z"></path></svg>`;
     const svgFile = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2ZM18 20H6V4H13V9H18V20Z"/></svg>`;
-    const svgDownload = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
-    const svgEye = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+    const svgCopy = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+    const svgCheck = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
 
     // ==========================================
-    // 2. CSS 样式
+    // 2. CSS 变量
     // ==========================================
     const cssVariables = `
         :root {
@@ -39,6 +39,8 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
             --highlight-bg: rgba(37, 99, 235, 0.15);
             --card-bg: #ffffff;
             --card-border: #e0e0e0;
+            --code-bg: #f9fafb; /* 极浅灰 */
+            --code-header: transparent;
             --radius-md: 10px;
             
             --scroll-track: transparent;
@@ -60,10 +62,13 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
             --highlight-bg: rgba(96, 165, 250, 0.2);
             --card-bg: #2a2a2a;
             --card-border: #444;
+            --code-bg: #262626;
+            --code-header: transparent;
             --scroll-thumb: #474747;
             --scroll-thumb-hover: #5a5a5a;
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: var(--scroll-track); }
         ::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 4px; }
@@ -87,191 +92,196 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
         .article-container { max-width: 960px; margin: 0 auto; padding: 40px 120px 150px; transition: padding 0.3s; }
         
         h1.page-title { font-size: 2.4rem; font-weight: 700; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); line-height: 1.2; margin-top: 0; }
-        h1, h2, h3, h4, h5, h6 { scroll-margin-top: 2em; border-radius: 6px; padding: 4px 12px; margin-left: -12px; margin-right: -12px; transition: background-color 0.2s; }
+        
+        h1, h2, h3, h4, h5, h6 { 
+            scroll-margin-top: 0; 
+            border-radius: 6px; padding: 4px 12px; margin-left: -12px; margin-right: -12px; transition: background-color 0.2s; 
+        }
         .highlight-target { background-color: var(--highlight-bg); }
 
         a { color: var(--primary); text-decoration: none; cursor: pointer; border-bottom: 1px solid transparent; transition: border 0.2s; }
         a:hover { border-bottom-color: var(--primary); }
         img { max-width: 100%; border-radius: 4px; cursor: zoom-in; display: block; margin: 1.5em auto; }
         blockquote { border-left: 3px solid var(--text-main); margin: 1.5em 0; padding-left: 1em; color: var(--text-sec); font-style: italic; }
+        
         code { background: var(--hover-bg); padding: 3px 6px; border-radius: 4px; font-family: monospace; font-size: 0.85em; color: #eb5757; }
         [data-theme="dark"] code { color: #ff9580; }
     `;
 
-    const cssAttachments = `
-        /* === 文件卡片 (UI 2.0) === */
-        .file-card {
-            display: flex; flex-direction: row; /* 横向布局 */
+    // 代码块样式 (Notion Style)
+    const cssCodeBlocks = `
+        .copy-code-button { display: none !important; }
+
+        .code-block-container {
+            position: relative;
+            background: var(--code-bg);
+            border-radius: var(--radius-md);
+            margin: 16px 0;
+            overflow: hidden;
+            border: 1px solid transparent; 
+        }
+        [data-theme="dark"] .code-block-container { border-color: var(--border); }
+        
+        /* 操作栏 */
+        .code-controls {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            display: flex;
             align-items: center;
+            gap: 12px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            z-index: 10;
+            background: var(--code-bg);
+            padding-left: 8px;
+            border-radius: 4px;
+        }
+        .code-block-container:hover .code-controls { opacity: 1; }
+        
+        /* 语言下拉框: 居中显示 */
+        .lang-select {
+            background: transparent; 
+            border: 1px solid transparent;
+            color: var(--text-sec); 
+            font-size: 12px;
+            cursor: pointer; outline: none; font-family: inherit;
+            appearance: none; 
+            font-weight: 500;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.1s;
+            white-space: nowrap;
+            text-align: center;      /* 文字居中 */
+            text-align-last: center; /* 确保选中项居中 */
+        }
+        .lang-select:hover { background: var(--hover-bg); color: var(--text-main); }
+        
+        [data-theme="dark"] .lang-select { color-scheme: dark; color: #d4d4d4; }
+        [data-theme="dark"] .lang-select option { background-color: #2a2a2a; color: #d4d4d4; }
+        
+        .lang-select::-webkit-scrollbar { width: 6px; height: 6px; }
+        .lang-select::-webkit-scrollbar-track { background: transparent; }
+        .lang-select::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 3px; }
+        .lang-select::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
+        [data-theme="dark"] .lang-select::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); }
+
+        /* 复制按钮 */
+        .code-copy-btn {
+            background: transparent; 
+            border: 1px solid transparent;
+            color: var(--text-sec); font-size: 12px;
+            cursor: pointer; padding: 4px 8px;
+            border-radius: 4px;
+            display: flex; align-items: center; gap: 4px;
+            font-family: inherit;
+            transition: all 0.1s;
+            white-space: nowrap;
+        }
+        .code-copy-btn:hover { background: var(--hover-bg); color: var(--text-main); }
+
+        /* 代码区域 */
+        .code-block-container pre {
+            margin: 0 !important;
+            padding: 34px 16px 16px !important;
+            overflow-x: auto;
+            background: transparent !important;
+            border: none !important;
+        }
+        
+        .code-block-container pre::-webkit-scrollbar { height: 6px; width: 6px; }
+        .code-block-container pre::-webkit-scrollbar-track { background: transparent; }
+        .code-block-container pre::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.08); border-radius: 3px; }
+        .code-block-container pre::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.15); }
+        [data-theme="dark"] .code-block-container pre::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+
+        .code-block-container code {
+            background: transparent !important;
+            padding: 0 !important;
+            border-radius: 0 !important;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text-main);
+            white-space: pre;
+            font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+        }
+    `;
+
+    const cssAttachments = `
+        .file-card {
+            display: flex; flex-direction: row; align-items: center;
             background: var(--card-bg); border: 1px solid var(--card-border);
-            border-radius: var(--radius-md); 
-            padding: 10px 14px; 
-            margin: 20px auto; 
+            border-radius: var(--radius-md); padding: 10px 14px; margin: 16px auto; 
             width: 320px; max-width: 100%;
             text-decoration: none !important; transition: all 0.2s; cursor: pointer;
             box-shadow: 0 1px 2px rgba(0,0,0,0.03); user-select: none;
         }
         .file-card:hover { border-color: var(--primary); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); transform: translateY(-1px); }
         
-        /* 图标区 */
-        .file-card .file-icon { 
-            font-size: 24px; color: var(--text-sec); 
-            margin-right: 14px; display: flex; align-items: center; justify-content: center;
-        }
+        .file-card .file-icon { font-size: 24px; color: var(--text-sec); margin-right: 12px; display: flex; align-items: center; }
+        .file-card .file-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
+        .file-card .file-name { font-weight: 700; font-size: 14px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
+        .file-card .file-meta { font-size: 11px; color: var(--text-sec); display: flex; align-items: center; opacity: 0.8; }
         
-        /* 信息区 (右侧主体) */
-        .file-card .file-info { 
-            flex: 1; min-width: 0; 
-            display: flex; flex-direction: column; justify-content: center; 
-        }
-        
-        /* 文件名 (上) */
-        .file-card .file-name { 
-            font-weight: 600; /* 加粗 */
-            font-size: 14px; 
-            color: var(--text-main); 
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
-            line-height: 1.4;
-        }
-        
-        /* 元数据或按钮区 (下) */
-        .file-card .file-meta { 
-            font-size: 11px; color: var(--text-sec); margin-top: 2px; 
-            display: flex; align-items: center;
-        }
-        
-        /* PDF 按钮组 (位于信息区下方) */
-        .file-card .file-actions { 
-            display: flex; gap: 8px; margin-top: 4px; 
-        }
+        .file-card .file-actions { display: flex; gap: 6px; margin-top: 6px; width: 100%; }
         .file-card button, .file-card .btn-download {
-            background: transparent; 
-            border: 1px solid var(--border); 
-            border-radius: 4px;
-            color: var(--text-sec); font-size: 11px; 
-            padding: 2px 8px; line-height: 1.4;
-            cursor: pointer; transition: all 0.1s;
-            text-decoration: none !important;
-            flex: 1; /* 均匀分布 */
-            text-align: center;
+            background: transparent; border: 1px solid var(--border); border-radius: 4px;
+            color: var(--text-sec); font-size: 11px; padding: 3px 0; line-height: 1.4;
+            cursor: pointer; transition: all 0.1s; text-decoration: none !important;
+            flex: 1; text-align: center; display: block;
         }
-        .file-card button:hover, .file-card .btn-download:hover { 
-            background: var(--hover-bg); color: var(--text-main); border-color: var(--text-sec); 
-        }
-
-        /* 通用文件下载图标 (最右侧) */
-        .file-download-icon { 
-            color: var(--text-sec); opacity: 0.6; margin-left: 12px; 
-            display: flex; align-items: center;
-        }
+        .file-card button:hover, .file-card .btn-download:hover { background: var(--hover-bg); color: var(--text-main); border-color: var(--text-sec); }
+        
+        .file-download-icon { color: var(--text-sec); opacity: 0.6; margin-left: 12px; display: flex; align-items: center; }
         .file-card:hover .file-download-icon { opacity: 1; color: var(--primary); }
 
-        /* 媒体播放器 */
         .media-container { 
-            display: flex; flex-direction: column; align-items: center; 
-            margin: 30px auto; width: 100%; max-width: 600px;
-            background: var(--card-bg); padding: 16px; 
-            border-radius: var(--radius-md); border: 1px solid var(--card-border);
+            display: flex; flex-direction: column; align-items: center; margin: 30px auto; width: 100%; max-width: 600px;
+            background: var(--card-bg); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--card-border);
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
         audio, video { width: 100%; outline: none; border-radius: 6px; }
         .media-caption { margin-top: 8px; font-size: 12px; color: var(--text-sec); text-align: center; }
 
-        /* PDF 预览 */
-        .pdf-preview-container embed {
-            display: block; width: 100%; height: 800px;
-            border-radius: var(--radius-md); border: 1px solid var(--border);
-            margin-top: 10px; background: #fff;
-        }
+        .pdf-preview-container embed { display: block; width: 100%; height: 800px; border-radius: var(--radius-md); border: 1px solid var(--border); margin-top: 10px; background: #fff; }
         .pdf-preview-container.active { display: block !important; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     `;
 
     const cssUI = `
-        /* === 1. 右侧边缘栏 (核心修复) === */
-        .right-edge-bar { 
-            position: fixed; right: 0; top: 0; bottom: 0; 
-            width: 24px; /* 窄条触发区 */
-            display: flex; flex-direction: column; align-items: flex-end; 
-            z-index: 50; 
-            pointer-events: auto; /* 允许点击触发 */
-        }
-        
-        /* 隐形底盘主题按钮 */
-        .theme-toggle { 
-            position: fixed; top: 20px; right: 20px; 
-            width: 36px; height: 36px; 
-            display: flex; align-items: center; justify-content: center; 
-            border-radius: 50%; cursor: pointer; 
-            color: var(--text-sec); background: transparent; 
-            border: none; padding: 0; line-height: 0;
-            z-index: 52; pointer-events: auto; 
-            transition: all 0.2s; 
-        }
+        .right-edge-bar { position: fixed; right: 0; top: 0; bottom: 0; width: 24px; display: flex; flex-direction: column; align-items: flex-end; z-index: 50; pointer-events: auto; }
+        .theme-toggle { position: fixed; top: 20px; right: 20px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; color: var(--text-sec); background: transparent; border: none; padding: 0; line-height: 0; z-index: 52; pointer-events: auto; transition: all 0.2s; }
         .theme-toggle:hover { background: var(--hover-bg); color: var(--text-main); transform: scale(1.05); }
         .theme-toggle svg { display: block; }
 
-        /* 大纲 Trigger */
-        .toc-trigger-container { 
-            height: auto; margin-top: 30vh; 
-            display: flex; flex-direction: column; align-items: flex-end; 
-            padding-right: 36px; gap: 14px; width: 100px; 
-            transition: opacity 0.2s; pointer-events: auto; 
-        }
+        .toc-trigger-container { height: auto; margin-top: 30vh; display: flex; flex-direction: column; align-items: flex-end; padding-right: 36px; gap: 14px; width: 100px; transition: opacity 0.2s; pointer-events: auto; }
         .toc-line { height: 2px; background: var(--toc-line-inactive); border-radius: 2px; transition: background-color 0.2s; cursor: pointer; width: 16px; }
         .toc-line.level-1 { width: 24px; } .toc-line.level-2 { width: 18px; } .toc-line.level-3 { width: 14px; } .toc-line.level-4 { width: 10px; }
         .toc-line.active { background: var(--toc-line-active); }
 
-        /* 大纲 Popover */
-        .toc-popover { 
-            position: fixed; right: 20px; top: 30vh; 
-            width: 220px; transform: translateY(-20%) translateX(20px) scale(0.95); 
-            max-height: 60vh; background: var(--popover-bg); 
-            box-shadow: var(--popover-shadow); border-radius: var(--radius-md); padding: 8px; 
-            overflow-x: hidden; overflow-y: auto; opacity: 0; 
-            pointer-events: none; transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94); 
-            z-index: 51; 
-        }
+        .toc-popover { position: fixed; right: 20px; top: 30vh; width: 220px; transform: translateY(-20%) translateX(20px) scale(0.95); max-height: 60vh; background: var(--popover-bg); box-shadow: var(--popover-shadow); border-radius: var(--radius-md); padding: 8px; overflow-x: hidden; overflow-y: auto; opacity: 0; pointer-events: none; transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94); z-index: 51; }
         .toc-popover::after { content: ""; position: absolute; top: 0; bottom: 0; right: -60px; width: 80px; z-index: -1; }
-        
-        /* 交互逻辑 */
         .toc-trigger-container:hover { opacity: 0; }
         .toc-trigger-container:hover + .toc-popover, .toc-popover:hover { opacity: 1; pointer-events: auto; transform: translateY(-20%) translateX(0) scale(1); }
         .right-edge-bar:has(.toc-popover:hover) .toc-trigger-container { opacity: 0; }
 
-        .toc-link { 
-            display: block; padding: 8px 12px; color: var(--text-sec); 
-            font-size: 13px; text-decoration: none; border-radius: 6px; 
-            margin-bottom: 2px; line-height: 1.5; white-space: normal; 
-            word-break: break-word; transition: background 0.1s, color 0.1s; 
-            border-bottom: none !important; 
-        }
-        .toc-link.level-1 { font-weight: 600; color: var(--text-main); margin-left: 0; } 
-        .toc-link.level-2 { margin-left: 12px; } .toc-link.level-3 { margin-left: 24px; font-size: 12px; } .toc-link.level-4 { margin-left: 36px; font-size: 12px; }
+        .toc-link { display: block; padding: 8px 12px; color: var(--text-sec); font-size: 13px; text-decoration: none; border-radius: 6px; margin-bottom: 2px; line-height: 1.5; white-space: normal; word-break: break-word; transition: background 0.1s, color 0.1s; border-bottom: none !important; }
+        .toc-link.level-1 { font-weight: 600; color: var(--text-main); margin-left: 0; } .toc-link.level-2 { margin-left: 12px; } .toc-link.level-3 { margin-left: 24px; font-size: 12px; } .toc-link.level-4 { margin-left: 36px; font-size: 12px; }
         .toc-link:hover { background: var(--hover-bg); color: var(--text-main); }
         .toc-link.active { color: var(--primary); background: transparent; font-weight: 500; }
         .toc-link.active:hover { background: var(--hover-bg); color: var(--primary); }
 
-        /* 灯箱 */
         #lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 1000; overflow: hidden; }
         #lightbox img { max-width: 90vw; max-height: 90vh; box-shadow: none; border-radius: 4px; cursor: grab; transition: transform 0.1s ease-out; transform-origin: center; will-change: transform; }
         #lightbox img:active { cursor: grabbing; }
 
-        /* === 移动端适配 === */
         #mobile-menu-btn { display: none; }
-
         @media (max-width: 768px) {
             #sidebar { position: fixed; height: 100%; transform: translateX(-100%); box-shadow: 4px 0 12px rgba(0,0,0,0.1); }
             #sidebar.open { transform: translateX(0); }
-            
-            /* 1. 恢复右侧边栏显示，并优化点击 */
             .right-edge-bar { display: flex !important; width: 30px; }
-            /* 将触发区稍微调大一点点方便点击 */
-            .toc-trigger-container { padding-right: 10px; width: 40px; }
-            
+            .toc-trigger-container { width: 40px; padding-right: 10px; }
             .article-container { padding: 80px 24px; }
-
-            /* 2. 单页面隐藏左上角按钮 */
             #mobile-menu-btn { 
                 position: fixed; top: 16px; left: 16px; 
                 display: ${isSinglePage ? 'none' : 'flex'}; 
@@ -281,8 +291,6 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
                 box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 90;
                 color: var(--text-sec); cursor: pointer;
             }
-            
-            /* 移动端大纲激活状态 */
             .toc-popover.mobile-active {
                 opacity: 1; pointer-events: auto;
                 position: fixed !important; right: 40px !important; top: 20vh !important;
@@ -315,7 +323,14 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
                 script.onerror = function() { const fs = document.createElement('script'); fs.src = config.fallback; fs.async = true; document.head.appendChild(fs); };
                 document.head.appendChild(script);
             }
-            window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\\\(', '\\\\)']] }, svg: { fontCache: 'global' }, startup: { pageReady: () => MathJax.startup.defaultPageReady() } };
+            window.MathJax = { 
+                tex: { 
+                    inlineMath: [['$', '$'], ['\\\\(', '\\\\)']],
+                    displayMath: [['$$', '$$'], ['\\\\[', '\\\\]']]
+                }, 
+                svg: { fontCache: 'global' }, 
+                startup: { pageReady: () => MathJax.startup.defaultPageReady() } 
+            };
             loadCSS(RESOURCES.prismCss);
             loadJS(RESOURCES.mathJax);
         })();
@@ -323,6 +338,7 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
     <style>
         ${cssVariables}
         ${cssLayout}
+        ${cssCodeBlocks}
         ${cssAttachments}
         ${cssUI}
     </style>
@@ -344,9 +360,7 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
             <div class="article-container">
                 <h1 id="page-title" class="page-title"></h1>
                 <div id="page-content"></div>
-                <div style="margin-top: 80px; border-top: 1px solid var(--border); padding-top: 30px; text-align: center; color: var(--text-sec); font-size: 0.85em;">
-                    Generated by Export HTML
-                </div>
+                ${settings.showFooter ? `<div style="margin-top: 80px; border-top: 1px solid var(--border); padding-top: 30px; text-align: center; color: var(--text-sec); font-size: 0.85em;">Generated by Export HTML</div>` : ''}
             </div>
         </main>
 
@@ -366,7 +380,7 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
 
     <script>
         ${dataScript}
-        const ICONS = { sun: '${svgSun}', moon: '${svgMoon}' };
+        const ICONS = { sun: '${svgSun}', moon: '${svgMoon}', copy: '${svgCopy}', check: '${svgCheck}' };
 
         const app = {
             data: WIKI_DATA,
@@ -379,25 +393,60 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
                 this.renderSidebar();
                 this.loadState();
                 
-                // 1. 右侧大纲点击逻辑 (兼容移动端)
+                // 1. 代码块: 复制
+                document.getElementById('page-content').addEventListener('click', e => {
+                    const btn = e.target.closest('.code-copy-btn');
+                    if (btn) {
+                        const wrapper = btn.closest('.code-block-container');
+                        const code = wrapper.querySelector('code').innerText;
+                        navigator.clipboard.writeText(code).then(() => {
+                            const original = btn.innerHTML;
+                            btn.innerHTML = ICONS.check + ' 已复制';
+                            btn.dataset.copied = 'true';
+                        });
+                    }
+                });
+
+                // 2. 代码块: 鼠标移出重置
+                document.getElementById('page-content').addEventListener('mouseout', e => {
+                    const wrapper = e.target.closest('.code-block-container');
+                    if (wrapper && !wrapper.contains(e.relatedTarget)) {
+                        const btn = wrapper.querySelector('.code-copy-btn');
+                        if (btn && btn.dataset.copied === 'true') {
+                            btn.innerHTML = ICONS.copy + ' 复制';
+                            delete btn.dataset.copied;
+                        }
+                    }
+                });
+
+                // 3. 语言切换
+                document.getElementById('page-content').addEventListener('change', e => {
+                    if (e.target.classList.contains('lang-select')) {
+                        const wrapper = e.target.closest('.code-block-container');
+                        const codeEl = wrapper.querySelector('code');
+                        const newLang = e.target.value;
+                        codeEl.className = 'language-' + newLang;
+                        if (window.Prism) window.Prism.highlightElement(codeEl);
+                    }
+                });
+
+                // 4. 右侧大纲点击
                 const tocContainer = document.querySelector('.toc-trigger-container');
                 if (tocContainer) {
                     tocContainer.addEventListener('click', (e) => {
                         if (window.innerWidth <= 768) {
                             this.toggleMobileToc(!this.isMobileTocOpen);
-                            e.stopPropagation(); // 防止冒泡
+                            e.stopPropagation(); 
                         }
                     });
                 }
 
-                // 全局图片点击
+                // 5. 图片点击
                 document.getElementById('page-content').addEventListener('click', e => {
-                    if(e.target.tagName === 'IMG') {
-                        this.openLightbox(e.target.src);
-                    }
+                    if(e.target.tagName === 'IMG') this.openLightbox(e.target.src);
                 });
 
-                // PDF 按钮逻辑
+                // 6. PDF 按钮
                 document.getElementById('page-content').addEventListener('click', e => {
                     if(e.target.classList.contains('btn-preview')) {
                         const card = e.target.closest('.file-card');
@@ -421,23 +470,18 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
                     }
                 });
 
-                // 2. 下载确认逻辑
+                // 7. 下载确认
                 document.getElementById('page-content').addEventListener('click', e => {
-                    // 查找是否点击了下载链接 (包含通用卡片本身 或 PDF的下载按钮)
                     const downloadLink = e.target.closest('a[download]') || e.target.closest('.btn-download');
                     if (downloadLink) {
-                        e.preventDefault(); // 阻止默认下载
-                        
-                        // 获取文件名
+                        e.preventDefault(); 
                         let fileName = 'file';
                         const card = downloadLink.closest('.file-card');
                         if (card) {
                             const nameEl = card.querySelector('.file-name');
                             if (nameEl) fileName = nameEl.innerText;
                         }
-
                         if (confirm(\`确认下载文件: \${fileName}?\`)) {
-                            // 手动触发下载
                             const href = downloadLink.getAttribute('href');
                             const a = document.createElement('a');
                             a.href = href;
@@ -449,15 +493,13 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
                     }
                 });
 
-                // 点击空白处关闭移动端大纲 & 取消高亮
+                // 8. 关闭遮罩
                 document.addEventListener('mousedown', (e) => {
                     const popover = document.getElementById('toc-popover-list');
                     const trigger = document.querySelector('.toc-trigger-container');
-                    
                     if (this.isMobileTocOpen && !popover.contains(e.target) && !trigger.contains(e.target)) {
                         this.toggleMobileToc(false);
                     }
-
                     if (!e.target.closest('.toc-link')) {
                         const targets = document.querySelectorAll('.highlight-target');
                         if (targets.length > 0) targets.forEach(t => t.classList.remove('highlight-target'));
@@ -470,11 +512,8 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
             toggleMobileToc(show) {
                 const popover = document.getElementById('toc-popover-list');
                 this.isMobileTocOpen = show;
-                if (show) {
-                    popover.classList.add('mobile-active');
-                } else {
-                    popover.classList.remove('mobile-active');
-                }
+                if (show) popover.classList.add('mobile-active');
+                else popover.classList.remove('mobile-active');
             },
 
             renderSidebar() {
@@ -510,6 +549,9 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
                     if (window.MathJax && window.MathJax.typesetPromise) {
                         window.MathJax.typesetPromise([contentEl]).catch(err => console.log(err));
                     }
+                    if (window.Prism) {
+                        window.Prism.highlightAllUnder(contentEl);
+                    }
                 }, 100);
             },
 
@@ -534,10 +576,7 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
                 if(target) {
                     target.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     target.classList.add('highlight-target');
-                    
-                    if (this.isMobileTocOpen) {
-                        this.toggleMobileToc(false);
-                    }
+                    if (this.isMobileTocOpen) this.toggleMobileToc(false);
                 }
             },
 
