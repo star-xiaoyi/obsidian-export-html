@@ -9,87 +9,27 @@ export interface PageData {
 export function getTemplate(pages: PageData[], defaultTitle: string) {
     const dataScript = `const WIKI_DATA = ${JSON.stringify(pages)};`;
 
-    // 1. 更换为简单的弯月图标
-    const iconMoon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
+    // ==========================================
+    // 1. SVG 图标定义 (内嵌以保证离线可用)
+    // ==========================================
     
-    // 太阳图标 (保持原样，加了 style="display:block" 确保居中)
-    const iconSun = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`;
-
-    return `<!DOCTYPE html>
-<html lang="zh-CN" data-theme="light">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${defaultTitle}</title>
+    // 太阳 (Sun Line) - 居中修正
+    const svgSun = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`;
     
-    <script>
-        (function() {
-            // 资源配置表
-            const RESOURCES = {
-                // 代码高亮样式
-                prismCss: {
-                    primary: 'https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css',
-                    fallback: 'https://unpkg.com/prismjs@1.29.0/themes/prism.min.css'
-                },
-                // 图标库样式
-                remixIcon: {
-                    primary: 'https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css',
-                    fallback: 'https://unpkg.com/remixicon@3.5.0/fonts/remixicon.css'
-                },
-                // MathJax (如果Obsidian导出的公式需要渲染)
-                mathJax: {
-                    primary: 'https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js',
-                    fallback: 'https://unpkg.com/mathjax@3.2.2/es5/tex-mml-chtml.js'
-                }
-            };
+    // 月亮 (Moon Line) - 极简弯月版
+    const svgMoon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
+    
+    // 菜单 (Menu)
+    const svgMenu = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 4H21V6H3V4ZM3 11H21V13H3V11ZM3 18H21V20H3V18Z"></path></svg>`;
+    
+    // 文件 (File)
+    const svgFile = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M21 8V20.9932C21 21.5501 20.5552 22 20.0066 22H3.9934C3.44495 22 3 21.556 3 21.0082V2.9918C3 2.45531 3.4487 2 4.00221 2H14.9968L21 8ZM19 9H14V4H5V20H19V9ZM8 7H11V9H8V7ZM8 11H16V13H8V11ZM8 15H16V17H8V15Z"></path></svg>`;
 
-            // CSS 加载函数
-            function loadCSS(config) {
-                const link = document.createElement('link');
-                link.rel = 'stylesheet';
-                link.href = config.primary;
-                link.onerror = function() {
-                    console.warn('主 CDN 加载失败，切换备用:', config.primary);
-                    const fallbackLink = document.createElement('link');
-                    fallbackLink.rel = 'stylesheet';
-                    fallbackLink.href = config.fallback;
-                    document.head.appendChild(fallbackLink);
-                };
-                document.head.appendChild(link);
-            }
-
-            // MathJax 配置
-            window.MathJax = {
-                tex: { inlineMath: [['$', '$'], ['\\\\(', '\\\\)']] },
-                svg: { fontCache: 'global' },
-                startup: {
-                    pageReady: () => MathJax.startup.defaultPageReady()
-                }
-            };
-
-            // JS 加载函数 (异步)
-            function loadJS(config) {
-                const script = document.createElement('script');
-                script.src = config.primary;
-                script.async = true;
-                script.onerror = function() {
-                    console.warn('脚本主 CDN 加载失败，切换备用:', config.primary);
-                    const fbScript = document.createElement('script');
-                    fbScript.src = config.fallback;
-                    fbScript.async = true;
-                    document.head.appendChild(fbScript);
-                };
-                document.head.appendChild(script);
-            }
-
-            // 执行加载
-            loadCSS(RESOURCES.prismCss);
-            loadCSS(RESOURCES.remixIcon);
-            loadJS(RESOURCES.mathJax);
-        })();
-    </script>
-
-    <style>
+    // ==========================================
+    // 2. CSS 样式 (分模块定义，避免截断)
+    // ==========================================
+    
+    const cssVariables = `
         :root {
             --primary: #2563eb;
             --bg-body: #ffffff;
@@ -103,12 +43,12 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
             --popover-bg: #ffffff;
             --popover-shadow: rgba(15, 15, 15, 0.04) 0px 0px 0px 1px, rgba(15, 15, 15, 0.08) 0px 4px 12px, rgba(15, 15, 15, 0.1) 0px 12px 32px;
             --highlight-bg: rgba(37, 99, 235, 0.15);
-            
+            --card-bg: #ffffff;
+            --card-border: #e0e0e0;
             --scroll-track: transparent;
             --scroll-thumb: #d3d1cb;
             --scroll-thumb-hover: #aeaca6;
         }
-
         [data-theme="dark"] {
             --primary: #60a5fa;
             --bg-body: #191919;
@@ -122,21 +62,23 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
             --popover-bg: #252525;
             --popover-shadow: rgba(0, 0, 0, 0.6) 0px 0px 0px 1px, rgba(0, 0, 0, 0.7) 0px 4px 12px, rgba(0, 0, 0, 0.8) 0px 12px 32px;
             --highlight-bg: rgba(96, 165, 250, 0.2);
+            --card-bg: #2a2a2a;
+            --card-border: #444;
             --scroll-thumb: #474747;
             --scroll-thumb-hover: #5a5a5a;
         }
-
         * { box-sizing: border-box; }
-        
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: var(--scroll-track); }
         ::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--scroll-thumb-hover); }
+    `;
 
+    const cssLayout = `
         body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; background: var(--bg-body); color: var(--text-main); height: 100vh; display: flex; overflow: hidden; transition: background 0.3s, color 0.3s; }
-        
         .layout-container { display: flex; width: 100%; height: 100%; }
-        
+
+        /* 左侧边栏 */
         #sidebar { width: 260px; background: var(--sidebar-bg); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 20; flex-shrink: 0; }
         .search-box { padding: 12px; }
         .search-box input { width: 100%; padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border); outline: none; background: var(--bg-body); color: var(--text-main); font-size: 14px; }
@@ -146,21 +88,12 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
         .file-item:hover { background: var(--hover-bg); color: var(--text-main); }
         .file-item.active { background: var(--hover-bg); color: var(--text-main); font-weight: 600; }
 
+        /* 主内容区 */
         #main-scroll { flex: 1; overflow-y: overlay; scroll-behavior: smooth; position: relative; }
-        
         .article-container { max-width: 960px; margin: 0 auto; padding: 40px 120px 150px; }
         
         h1.page-title { font-size: 2.4rem; font-weight: 700; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); line-height: 1.2; margin-top: 0; }
-        
-        h1, h2, h3, h4, h5, h6 { 
-            scroll-margin-top: 2em; 
-            border-radius: 6px;
-            padding: 4px 12px; 
-            margin-left: -12px; 
-            margin-right: -12px;
-            transition: background-color 0.2s;
-        }
-
+        h1, h2, h3, h4, h5, h6 { scroll-margin-top: 2em; border-radius: 6px; padding: 4px 12px; margin-left: -12px; margin-right: -12px; transition: background-color 0.2s; }
         .highlight-target { background-color: var(--highlight-bg); }
 
         a { color: var(--primary); text-decoration: none; cursor: pointer; border-bottom: 1px solid transparent; transition: border 0.2s; }
@@ -169,154 +102,105 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
         blockquote { border-left: 3px solid var(--text-main); margin: 1.5em 0; padding-left: 1em; color: var(--text-sec); font-style: italic; }
         code { background: var(--hover-bg); padding: 3px 6px; border-radius: 4px; font-family: monospace; font-size: 0.85em; color: #eb5757; }
         [data-theme="dark"] code { color: #ff9580; }
+    `;
 
-        /* === 右侧边缘栏 === */
-        .right-edge-bar {
-            position: fixed; right: 0; top: 0; bottom: 0;
-            width: 0; 
+    // 重点：附件、卡片、媒体播放器样式
+    const cssAttachments = `
+        /* 1. 文件卡片 (ZIP, RAR, Word, 通用) */
+        .file-card {
+            display: flex; align-items: center;
+            background: var(--card-bg); border: 1px solid var(--card-border);
+            border-radius: 8px; padding: 12px 16px; margin: 20px auto; max-width: 600px;
+            text-decoration: none !important; transition: all 0.2s; cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .file-card:hover { border-color: var(--primary); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1); transform: translateY(-1px); }
+        .file-icon { font-size: 24px; margin-right: 16px; display: flex; align-items: center; }
+        .file-info { flex: 1; min-width: 0; }
+        .file-name { font-weight: 500; color: var(--text-main); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .file-meta { font-size: 12px; color: var(--text-sec); }
+        .file-download-icon { color: var(--text-sec); font-size: 18px; margin-left: 12px; }
+
+        /* 2. 媒体容器 (Audio/Video) */
+        .media-container { 
+            display: flex; flex-direction: column; align-items: center; 
+            margin: 30px 0; background: var(--card-bg); padding: 20px; 
+            border-radius: 12px; border: 1px solid var(--card-border);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        audio, video { width: 100%; outline: none; border-radius: 8px; }
+        .media-caption { margin-top: 10px; font-size: 13px; color: var(--text-sec); }
+
+        /* 3. PDF 容器 */
+        embed[type="application/pdf"] {
+            display: block; width: 100%; height: 800px;
+            border-radius: 8px; border: 1px solid var(--border);
+            margin: 20px 0; background: #fff;
+        }
+        .attachment-fallback { text-align: center; color: var(--text-sec); font-size: 13px; margin-top: 5px; }
+    `;
+
+    const cssComponents = `
+        /* 右侧边缘栏 (防误触设计：width=0) */
+        .right-edge-bar { position: fixed; right: 0; top: 0; bottom: 0; width: 0; display: flex; flex-direction: column; align-items: flex-end; z-index: 50; pointer-events: none; }
+        
+        /* 隐形底盘主题按钮 */
+        .theme-toggle { 
+            position: fixed; top: 20px; right: 20px; 
+            width: 36px; height: 36px; 
+            display: flex; align-items: center; justify-content: center; 
+            border-radius: 50%; cursor: pointer; 
+            color: var(--text-sec); background: transparent; 
+            border: none; padding: 0; line-height: 0;
+            z-index: 52; pointer-events: auto; 
+            transition: all 0.2s; 
+        }
+        .theme-toggle:hover { background: var(--hover-bg); color: var(--text-main); transform: scale(1.05); }
+        .theme-toggle svg { display: block; }
+
+        /* 短线容器 */
+        .toc-trigger-container { 
+            height: auto; margin-top: 30vh; 
             display: flex; flex-direction: column; align-items: flex-end; 
-            z-index: 50;
-            pointer-events: none; 
+            padding-right: 36px; gap: 14px; width: 100px; 
+            transition: opacity 0.2s; pointer-events: auto; 
         }
-
-        /* 3. 按钮样式优化：完美居中与圆形 */
-        .theme-toggle {
-            position: fixed;
-            top: 20px; right: 20px;
-            width: 36px; height: 36px;
-            /* 关键：Flex 居中 */
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 50%;
-            cursor: pointer;
-            color: var(--text-sec);
-            background: transparent;
-            border: none;
-            box-shadow: none;
-            z-index: 52;
-            pointer-events: auto;
-            transition: transform 0.2s, background 0.2s, color 0.2s;
-            /* 关键：重置内边距和行高，防止图标偏移 */
-            padding: 0;
-            line-height: 0;
-        }
-        .theme-toggle:hover { 
-            background: var(--hover-bg);
-            color: var(--text-main); 
-            transform: scale(1.05);
-        }
-        /* 确保 SVG 本身没有奇怪的间隙 */
-        .theme-toggle svg {
-            display: block;
-        }
-
-        /* === 短线容器 === */
-        .toc-trigger-container {
-            height: auto; 
-            margin-top: 30vh;
-            display: flex; flex-direction: column; 
-            align-items: flex-end; 
-            padding-right: 36px;
-            gap: 14px;
-            width: 100px; 
-            transition: opacity 0.2s;
-            pointer-events: auto; 
-        }
-
-        .toc-line {
-            height: 2px;
-            background: var(--toc-line-inactive);
-            border-radius: 2px;
-            transition: background-color 0.2s;
-            cursor: pointer;
-            width: 16px; 
-        }
-        
-        .toc-line.level-1 { width: 24px; }
-        .toc-line.level-2 { width: 18px; }
-        .toc-line.level-3 { width: 14px; }
-        .toc-line.level-4 { width: 10px; }
-        
+        .toc-line { height: 2px; background: var(--toc-line-inactive); border-radius: 2px; transition: background-color 0.2s; cursor: pointer; width: 16px; }
+        .toc-line.level-1 { width: 24px; } .toc-line.level-2 { width: 18px; } .toc-line.level-3 { width: 14px; } .toc-line.level-4 { width: 10px; }
         .toc-line.active { background: var(--toc-line-active); }
 
-        /* === 大纲弹窗 === */
-        .toc-popover {
-            position: fixed;
-            right: 20px; 
-            top: 30vh; 
-            width: 220px;
-            transform: translateY(-20%) translateX(20px) scale(0.95);
-            max-height: 60vh;
-            background: var(--popover-bg);
-            box-shadow: var(--popover-shadow);
-            border-radius: 12px;
-            padding: 8px;
-            overflow-x: hidden;
-            overflow-y: auto;
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            z-index: 51;
+        /* 大纲弹窗 */
+        .toc-popover { 
+            position: fixed; right: 20px; top: 30vh; 
+            width: 220px; transform: translateY(-20%) translateX(20px) scale(0.95); 
+            max-height: 60vh; background: var(--popover-bg); 
+            box-shadow: var(--popover-shadow); border-radius: 12px; padding: 8px; 
+            overflow-x: hidden; overflow-y: auto; opacity: 0; 
+            pointer-events: none; transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94); 
+            z-index: 51; 
         }
-
-        .toc-popover::after {
-            content: "";
-            position: absolute;
-            top: 0; bottom: 0;
-            right: -60px; 
-            width: 80px; 
-            z-index: -1;
-        }
+        /* 隐形桥梁 */
+        .toc-popover::after { content: ""; position: absolute; top: 0; bottom: 0; right: -60px; width: 80px; z-index: -1; }
         
         .toc-trigger-container:hover { opacity: 0; }
-        
-        .toc-trigger-container:hover + .toc-popover,
-        .toc-popover:hover {
-            opacity: 1;
-            pointer-events: auto;
-            transform: translateY(-20%) translateX(0) scale(1);
-        }
+        .toc-trigger-container:hover + .toc-popover, .toc-popover:hover { opacity: 1; pointer-events: auto; transform: translateY(-20%) translateX(0) scale(1); }
+        .right-edge-bar:has(.toc-popover:hover) .toc-trigger-container { opacity: 0; }
 
-        .right-edge-bar:has(.toc-popover:hover) .toc-trigger-container {
-            opacity: 0;
+        /* 大纲链接 */
+        .toc-link { 
+            display: block; padding: 8px 12px; color: var(--text-sec); 
+            font-size: 13px; text-decoration: none; border-radius: 6px; 
+            margin-bottom: 2px; line-height: 1.5; white-space: normal; 
+            word-break: break-word; transition: background 0.1s, color 0.1s; 
+            border-bottom: none !important; 
         }
+        .toc-link.level-1 { font-weight: 600; color: var(--text-main); margin-left: 0; } 
+        .toc-link.level-2 { margin-left: 12px; } .toc-link.level-3 { margin-left: 24px; font-size: 12px; } .toc-link.level-4 { margin-left: 36px; font-size: 12px; }
+        .toc-link:hover { background: var(--hover-bg); color: var(--text-main); }
+        .toc-link.active { color: var(--primary); background: transparent; font-weight: 500; }
+        .toc-link.active:hover { background: var(--hover-bg); color: var(--primary); }
 
-        /* === 大纲链接样式 === */
-        .toc-link {
-            display: block;
-            padding: 8px 12px; 
-            color: var(--text-sec);
-            font-size: 13px;
-            text-decoration: none;
-            border-radius: 6px;
-            margin-bottom: 2px;
-            line-height: 1.5;
-            white-space: normal; 
-            word-break: break-word;
-            transition: background 0.1s, color 0.1s;
-            border-bottom: none !important;
-        }
-        
-        .toc-link.level-1 { font-weight: 600; color: var(--text-main); margin-left: 0; }
-        .toc-link.level-2 { margin-left: 12px; }
-        .toc-link.level-3 { margin-left: 24px; font-size: 12px; }
-        .toc-link.level-4 { margin-left: 36px; font-size: 12px; }
-
-        .toc-link:hover {
-            background: var(--hover-bg);
-            color: var(--text-main);
-        }
-        
-        .toc-link.active {
-            color: var(--primary);
-            background: transparent;
-            font-weight: 500;
-        }
-        
-        .toc-link.active:hover {
-            background: var(--hover-bg);
-            color: var(--primary); 
-        }
-
+        /* 灯箱与移动端适配 */
         #lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(5px); }
         #lightbox img { max-width: 90vw; max-height: 90vh; box-shadow: none; border-radius: 0; cursor: zoom-out; }
 
@@ -327,12 +211,52 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
             .right-edge-bar { display: none; }
             #mobile-menu-btn { display: flex !important; }
         }
-        #mobile-menu-btn { position: fixed; top: 20px; left: 20px; z-index: 30; background: var(--bg-body); border: 1px solid var(--border); display: none; width:36px; height:36px; align-items:center; justify-content:center; border-radius:50%; box-shadow:0 2px 5px rgba(0,0,0,0.05); }
+        #mobile-menu-btn { 
+            position: fixed; top: 20px; left: 20px; z-index: 30; 
+            background: var(--bg-body); border: 1px solid var(--border); 
+            display: none; width:36px; height:36px; align-items:center; 
+            justify-content:center; border-radius:50%; box-shadow:0 2px 5px rgba(0,0,0,0.05); 
+        }
+    `;
+
+    return `<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${defaultTitle}</title>
+    
+    <script>
+        (function() {
+            const RESOURCES = {
+                prismCss: { primary: 'https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css', fallback: 'https://unpkg.com/prismjs@1.29.0/themes/prism.min.css' },
+                mathJax: { primary: 'https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js', fallback: 'https://unpkg.com/mathjax@3.2.2/es5/tex-mml-chtml.js' }
+            };
+            function loadCSS(config) {
+                const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = config.primary;
+                link.onerror = function() { const fl = document.createElement('link'); fl.rel = 'stylesheet'; fl.href = config.fallback; document.head.appendChild(fl); };
+                document.head.appendChild(link);
+            }
+            function loadJS(config) {
+                const script = document.createElement('script'); script.src = config.primary; script.async = true;
+                script.onerror = function() { const fs = document.createElement('script'); fs.src = config.fallback; fs.async = true; document.head.appendChild(fs); };
+                document.head.appendChild(script);
+            }
+            window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\\\(', '\\\\)']] }, svg: { fontCache: 'global' }, startup: { pageReady: () => MathJax.startup.defaultPageReady() } };
+            loadCSS(RESOURCES.prismCss);
+            loadJS(RESOURCES.mathJax);
+        })();
+    </script>
+    <style>
+        ${cssVariables}
+        ${cssLayout}
+        ${cssAttachments}
+        ${cssComponents}
     </style>
 </head>
 <body>
     <div class="icon-btn" id="mobile-menu-btn" onclick="app.toggleSidebar()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 4H21V6H3V4ZM3 11H21V13H3V11ZM3 18H21V20H3V18Z"></path></svg>
+        ${svgMenu}
     </div>
 
     <div class="layout-container">
@@ -359,7 +283,7 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
         </div>
         
         <div class="theme-toggle" onclick="app.toggleTheme()" title="切换主题">
-             <div id="theme-icon-container">${iconSun}</div>
+             <div id="theme-icon-container">${svgSun}</div>
         </div>
     </div>
 
@@ -367,10 +291,7 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
 
     <script>
         ${dataScript}
-        const ICONS = {
-            sun: '${iconSun}',
-            moon: '${iconMoon}'
-        };
+        const ICONS = { sun: '${svgSun}', moon: '${svgMoon}' };
 
         const app = {
             data: WIKI_DATA,
@@ -381,6 +302,7 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
                 this.renderSidebar();
                 this.loadState();
                 
+                // 图片灯箱
                 document.getElementById('page-content').addEventListener('click', e => {
                     if(e.target.tagName === 'IMG') {
                         document.getElementById('lightbox-img').src = e.target.src;
@@ -388,12 +310,11 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
                     }
                 });
 
+                // 点击空白处取消标题高亮
                 document.addEventListener('mousedown', (e) => {
                     if (!e.target.closest('.toc-link')) {
                         const targets = document.querySelectorAll('.highlight-target');
-                        if (targets.length > 0) {
-                             targets.forEach(t => t.classList.remove('highlight-target'));
-                        }
+                        if (targets.length > 0) targets.forEach(t => t.classList.remove('highlight-target'));
                     }
                 });
             },
@@ -401,7 +322,7 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
             renderSidebar() {
                 document.getElementById('file-list-ul').innerHTML = this.data.map((p, i) => 
                     \`<li class="file-item" onclick="app.loadPage(\${i})" data-idx="\${i}">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M21 8V20.9932C21 21.5501 20.5552 22 20.0066 22H3.9934C3.44495 22 3 21.556 3 21.0082V2.9918C3 2.45531 3.4487 2 4.00221 2H14.9968L21 8ZM19 9H14V4H5V20H19V9ZM8 7H11V9H8V7ZM8 11H16V13H8V11ZM8 15H16V17H8V15Z"></path></svg>
+                        ${svgFile}
                         <span>\${p.title}</span>
                     </li>\`
                 ).join('');
@@ -418,18 +339,13 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
                 document.querySelector(\`.file-item[data-idx="\${idx}"]\`)?.classList.add('active');
                 
                 this.renderToc(page.toc);
-                
                 document.getElementById('main-scroll').scrollTop = 0;
                 localStorage.setItem('wiki_last_idx', idx);
 
                 setTimeout(() => {
-                    if(page.toc.length > 0) {
-                        const firstId = page.toc[0].id;
-                        this.updateActiveToc(firstId);
-                    }
-                    // 重新处理一下公式渲染 (如果 MathJax 已加载)
+                    if(page.toc.length > 0) this.updateActiveToc(page.toc[0].id);
                     if (window.MathJax && window.MathJax.typesetPromise) {
-                        window.MathJax.typesetPromise([contentEl]).catch((err) => console.log(err));
+                        window.MathJax.typesetPromise([contentEl]).catch(err => console.log(err));
                     }
                 }, 100);
             },
@@ -444,14 +360,8 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
                     return;
                 }
                 
-                linesContainer.innerHTML = toc.map(h => 
-                    \`<div class="toc-line level-\${h.level}" data-target="\${h.id}"></div>\`
-                ).join('');
-
-                popoverContainer.innerHTML = toc.map(h => 
-                    \`<a href="javascript:void(0)" onclick="app.scrollToHeader('\${h.id}')" class="toc-link level-\${h.level}" data-target="\${h.id}">\${h.text}</a>\`
-                ).join('');
-                
+                linesContainer.innerHTML = toc.map(h => \`<div class="toc-line level-\${h.level}" data-target="\${h.id}"></div>\`).join('');
+                popoverContainer.innerHTML = toc.map(h => \`<a href="javascript:void(0)" onclick="app.scrollToHeader('\${h.id}')" class="toc-link level-\${h.level}" data-target="\${h.id}">\${h.text}</a>\`).join('');
                 this.initScrollSpy();
             },
 
@@ -466,59 +376,43 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
 
             updateActiveToc(id) {
                 document.querySelectorAll('.toc-line.active, .toc-link.active').forEach(l => l.classList.remove('active'));
-                
                 const activeLine = document.querySelector(\`.toc-line[data-target="\${id}"]\`);
                 const activeLink = document.querySelector(\`.toc-link[data-target="\${id}"]\`);
-                
                 if(activeLine) activeLine.classList.add('active');
                 if(activeLink) {
                     activeLink.classList.add('active');
-                    if(getComputedStyle(document.querySelector('.toc-popover')).opacity === '1') {
-                         activeLink.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    }
+                    if(getComputedStyle(document.querySelector('.toc-popover')).opacity === '1') activeLink.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }
             },
 
             initScrollSpy() {
                 if(this.observer) this.observer.disconnect();
-                
                 const headers = document.querySelectorAll('#page-content h1, #page-content h2, #page-content h3, #page-content h4, #page-content h5, #page-content h6');
                 if(headers.length === 0) return;
-
                 this.observer = new IntersectionObserver(entries => {
                     entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            this.updateActiveToc(entry.target.id);
-                        }
+                        if (entry.isIntersecting) this.updateActiveToc(entry.target.id);
                     });
-                }, { 
-                    root: document.getElementById('main-scroll'), 
-                    rootMargin: "-10% 0px -70% 0px",
-                    threshold: 0
-                });
-                
+                }, { root: document.getElementById('main-scroll'), rootMargin: "-10% 0px -70% 0px", threshold: 0 });
                 headers.forEach(h => this.observer.observe(h));
             },
 
             toggleTheme() {
                 const html = document.documentElement;
-                const isDark = html.getAttribute('data-theme') === 'dark';
-                const newTheme = isDark ? 'light' : 'dark';
+                const newTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
                 html.setAttribute('data-theme', newTheme);
                 localStorage.setItem('wiki_theme', newTheme);
                 this.updateThemeIcon(newTheme);
             },
 
             updateThemeIcon(theme) {
-                const container = document.getElementById('theme-icon-container');
-                container.innerHTML = theme === 'dark' ? ICONS.moon : ICONS.sun;
+                document.getElementById('theme-icon-container').innerHTML = theme === 'dark' ? ICONS.moon : ICONS.sun;
             },
 
             loadState() {
                 const theme = localStorage.getItem('wiki_theme') || 'light';
                 document.documentElement.setAttribute('data-theme', theme);
                 this.updateThemeIcon(theme);
-
                 const lastIdx = localStorage.getItem('wiki_last_idx');
                 this.loadPage(lastIdx ? parseInt(lastIdx) : 0);
             },
