@@ -9,9 +9,11 @@ export interface PageData {
 export function getTemplate(pages: PageData[], defaultTitle: string) {
     const dataScript = `const WIKI_DATA = ${JSON.stringify(pages)};`;
 
-    // 内嵌 SVG 图标，确保手机/离线都能显示
-    const iconSun = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 18C8.68629 18 6 15.3137 6 12C6 8.68629 8.68629 6 12 6C15.3137 6 18 8.68629 18 12C18 15.3137 15.3137 18 12 18ZM12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16ZM11 1H13V4H11V1ZM11 20H13V23H11V20ZM3.51472 4.92893L4.92893 3.51472L7.05025 5.63604L5.63604 7.05025L3.51472 4.92893ZM16.9497 18.364L18.364 16.9497L20.4853 19.0711L19.0711 20.4853L16.9497 18.364ZM19.0711 3.51472L20.4853 4.92893L18.364 7.05025L16.9497 5.63604L19.0711 3.51472ZM5.63604 16.9497L7.05025 18.364L4.92893 20.4853L3.51472 19.0711L5.63604 16.9497ZM23 11V13H20V11H23ZM4 11V13H1V11H4Z"></path></svg>`;
-    const iconMoon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M11.3807 2.01886C9.91605 2.38117 8.58085 3.03458 7.42629 3.90161C6.01257 4.96443 4.94528 6.41723 4.35473 8.11307C4.16278 8.66314 4.02641 9.23194 3.94593 9.81431C3.86175 10.4227 3.84446 11.0456 3.89438 11.666C3.99368 12.9022 4.41703 14.0754 5.12726 15.0877C6.01257 16.3503 7.23485 17.3364 8.6536 17.915C9.82283 18.3916 11.084 18.5703 12.3394 18.4237C12.9234 18.3556 13.4925 18.2163 14.0378 18.0101C14.223 17.94 14.4055 17.8631 14.5849 17.7797C14.7358 17.7096 14.8841 17.6339 15.0298 17.5528C14.7828 17.5768 14.5323 17.5891 14.2797 17.5891C11.5183 17.5891 9.27972 15.3505 9.27972 12.5891C9.27972 10.4312 10.6473 8.59184 12.5645 7.79549C12.8226 7.68822 13.0906 7.60098 13.3664 7.53508C12.7214 6.07186 11.7145 4.80164 10.4369 3.85627C10.7431 3.22055 11.1643 2.63666 11.6853 2.12643C11.8315 1.98327 11.9836 1.84606 12.1412 1.71493C11.8906 1.81223 11.6378 1.91433 11.3807 2.01886ZM12.3394 18.4237C12.3394 18.4237 12.3394 18.4237 12.3394 18.4237ZM12.1412 1.71493C13.2355 3.32832 13.8447 5.25732 13.8447 7.29412C13.8447 11.3857 10.5901 14.7801 6.55152 14.9395C7.45663 17.394 9.82729 19.1471 12.607 19.1471C16.327 19.1471 19.3423 16.1318 19.3423 12.4118C19.3423 9.38769 17.3622 6.80496 14.6543 5.75336C14.0722 3.89652 12.9842 2.22384 11.5654 0.909668C11.7601 1.16972 11.9535 1.43977 12.1412 1.71493Z"></path></svg>`;
+    // 1. 更换为简单的弯月图标
+    const iconMoon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
+    
+    // 太阳图标 (保持原样，加了 style="display:block" 确保居中)
+    const iconSun = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`;
 
     return `<!DOCTYPE html>
 <html lang="zh-CN" data-theme="light">
@@ -19,7 +21,74 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${defaultTitle}</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet" />
+    
+    <script>
+        (function() {
+            // 资源配置表
+            const RESOURCES = {
+                // 代码高亮样式
+                prismCss: {
+                    primary: 'https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css',
+                    fallback: 'https://unpkg.com/prismjs@1.29.0/themes/prism.min.css'
+                },
+                // 图标库样式
+                remixIcon: {
+                    primary: 'https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css',
+                    fallback: 'https://unpkg.com/remixicon@3.5.0/fonts/remixicon.css'
+                },
+                // MathJax (如果Obsidian导出的公式需要渲染)
+                mathJax: {
+                    primary: 'https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js',
+                    fallback: 'https://unpkg.com/mathjax@3.2.2/es5/tex-mml-chtml.js'
+                }
+            };
+
+            // CSS 加载函数
+            function loadCSS(config) {
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = config.primary;
+                link.onerror = function() {
+                    console.warn('主 CDN 加载失败，切换备用:', config.primary);
+                    const fallbackLink = document.createElement('link');
+                    fallbackLink.rel = 'stylesheet';
+                    fallbackLink.href = config.fallback;
+                    document.head.appendChild(fallbackLink);
+                };
+                document.head.appendChild(link);
+            }
+
+            // MathJax 配置
+            window.MathJax = {
+                tex: { inlineMath: [['$', '$'], ['\\\\(', '\\\\)']] },
+                svg: { fontCache: 'global' },
+                startup: {
+                    pageReady: () => MathJax.startup.defaultPageReady()
+                }
+            };
+
+            // JS 加载函数 (异步)
+            function loadJS(config) {
+                const script = document.createElement('script');
+                script.src = config.primary;
+                script.async = true;
+                script.onerror = function() {
+                    console.warn('脚本主 CDN 加载失败，切换备用:', config.primary);
+                    const fbScript = document.createElement('script');
+                    fbScript.src = config.fallback;
+                    fbScript.async = true;
+                    document.head.appendChild(fbScript);
+                };
+                document.head.appendChild(script);
+            }
+
+            // 执行加载
+            loadCSS(RESOURCES.prismCss);
+            loadCSS(RESOURCES.remixIcon);
+            loadJS(RESOURCES.mathJax);
+        })();
+    </script>
+
     <style>
         :root {
             --primary: #2563eb;
@@ -101,57 +170,56 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
         code { background: var(--hover-bg); padding: 3px 6px; border-radius: 4px; font-family: monospace; font-size: 0.85em; color: #eb5757; }
         [data-theme="dark"] code { color: #ff9580; }
 
-        /* === 右侧边缘栏 (容器) === */
-        /* 1. 彻底解决误触：容器本身宽度极小，仅用于定位 */
+        /* === 右侧边缘栏 === */
         .right-edge-bar {
             position: fixed; right: 0; top: 0; bottom: 0;
-            width: 0; /* 甚至设为0，只让子元素溢出显示 */
-            display: flex; flex-direction: column; align-items: flex-end; /* 靠右对齐 */
+            width: 0; 
+            display: flex; flex-direction: column; align-items: flex-end; 
             z-index: 50;
-            pointer-events: none; /* 穿透 */
+            pointer-events: none; 
         }
 
-        /* 4. 按钮优化：圆形 + 固定定位 + 阴影 */
+        /* 3. 按钮样式优化：完美居中与圆形 */
         .theme-toggle {
-            position: fixed; /* 独立定位 */
+            position: fixed;
             top: 20px; right: 20px;
             width: 36px; height: 36px;
+            /* 关键：Flex 居中 */
             display: flex; align-items: center; justify-content: center;
-            border-radius: 50%; /* 圆形 */
+            border-radius: 50%;
             cursor: pointer;
             color: var(--text-sec);
-            background: var(--bg-body); /* 确保有背景 */
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08); /* 淡淡的阴影 */
-            border: 1px solid var(--border);
+            background: transparent;
+            border: none;
+            box-shadow: none;
             z-index: 52;
             pointer-events: auto;
-            transition: transform 0.2s, background 0.2s;
+            transition: transform 0.2s, background 0.2s, color 0.2s;
+            /* 关键：重置内边距和行高，防止图标偏移 */
+            padding: 0;
+            line-height: 0;
         }
         .theme-toggle:hover { 
-            background: var(--hover-bg); 
+            background: var(--hover-bg);
             color: var(--text-main); 
             transform: scale(1.05);
         }
+        /* 确保 SVG 本身没有奇怪的间隙 */
+        .theme-toggle svg {
+            display: block;
+        }
 
-        /* === 短线容器 (核心交互修复) === */
+        /* === 短线容器 === */
         .toc-trigger-container {
-            /* 1. 移除 flex: 1，改为自适应高度，不再占据全屏 */
             height: auto; 
-            /* 定位到屏幕大约 30% 的位置 */
             margin-top: 30vh;
-            
             display: flex; flex-direction: column; 
             align-items: flex-end; 
-            
-            /* 距离右侧的距离 */
             padding-right: 36px;
-            
             gap: 14px;
-            /* 宽度限制，确保左侧不会误触 */
             width: 100px; 
-            
             transition: opacity 0.2s;
-            pointer-events: auto; /* 恢复点击 */
+            pointer-events: auto; 
         }
 
         .toc-line {
@@ -175,38 +243,30 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
             position: fixed;
             right: 20px; 
             top: 30vh; 
-            /* 3. 宽度调整：原来的 3/4 (约 220px) */
             width: 220px;
-            
             transform: translateY(-20%) translateX(20px) scale(0.95);
             max-height: 60vh;
-            
             background: var(--popover-bg);
             box-shadow: var(--popover-shadow);
             border-radius: 12px;
             padding: 8px;
-            
-            /* 1. 解决底部滚动条：隐藏水平溢出 */
             overflow-x: hidden;
             overflow-y: auto;
-            
             opacity: 0;
             pointer-events: none;
             transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             z-index: 51;
         }
 
-        /* 隐形桥梁：连接线和弹窗 */
         .toc-popover::after {
             content: "";
             position: absolute;
             top: 0; bottom: 0;
-            right: -60px; /* 连接到右侧触发区 */
+            right: -60px; 
             width: 80px; 
             z-index: -1;
         }
         
-        /* 触发逻辑 */
         .toc-trigger-container:hover { opacity: 0; }
         
         .toc-trigger-container:hover + .toc-popover,
@@ -230,11 +290,8 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
             border-radius: 6px;
             margin-bottom: 2px;
             line-height: 1.5;
-            
-            /* 1. 解决文字溢出/滚动条：允许换行 */
             white-space: normal; 
             word-break: break-word;
-            
             transition: background 0.1s, color 0.1s;
             border-bottom: none !important;
         }
@@ -369,6 +426,10 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
                     if(page.toc.length > 0) {
                         const firstId = page.toc[0].id;
                         this.updateActiveToc(firstId);
+                    }
+                    // 重新处理一下公式渲染 (如果 MathJax 已加载)
+                    if (window.MathJax && window.MathJax.typesetPromise) {
+                        window.MathJax.typesetPromise([contentEl]).catch((err) => console.log(err));
                     }
                 }, 100);
             },
