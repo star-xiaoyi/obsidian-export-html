@@ -19,7 +19,6 @@ export class HtmlExporter {
             return;
         }
         
-        // 【修复】安全获取第一个文件名
         const firstFile = this.files[0];
         const defaultName = firstFile ? firstFile.basename : "Wiki-Export";
 
@@ -38,6 +37,9 @@ export class HtmlExporter {
         const assetsDirPath = path.join(saveDir, assetsDirName);
         
         let hasAttachments = false;
+        let skippedFiles = 0;
+        let copiedFiles = 0;
+
         const loadingNotice = new Notice(`正在处理 ${this.files.length} 个文件...`, 0);
         
         try {
@@ -49,7 +51,7 @@ export class HtmlExporter {
                 const renderWrapper = container.createDiv();
                 await MarkdownRenderer.render(this.app, await this.app.vault.read(file), renderWrapper, file.path, new Component());
 
-                // === 1. 图片处理 (Base64) ===
+                // === 1. 图片处理 (优先 Base64，保持单文件便携) ===
                 const images = renderWrapper.querySelectorAll('img');
                 await Promise.all(Array.from(images).map(async (img) => {
                     if (!img.src.startsWith('http')) {
@@ -57,12 +59,16 @@ export class HtmlExporter {
                             const response = await fetch(img.src);
                             const blob = await response.blob();
                             const base64 = await this.blobToBase64(blob);
-                            if (base64) img.src = base64;
+                            if (base64) {
+                                img.src = base64;
+                                // 增加 class 用于后续灯箱交互
+                                img.classList.add('lightbox-target');
+                            }
                         } catch (e) { console.warn('图片转换失败', img.src); }
                     }
                 }));
 
-                // === 2. 附件处理 (复制到 assets) ===
+                // === 2. 附件处理 (智能增量同步) ===
                 const mediaEmbeds = renderWrapper.querySelectorAll('.internal-embed');
                 for (let i = 0; i < mediaEmbeds.length; i++) {
                     const embed = mediaEmbeds[i] as HTMLElement;
@@ -73,7 +79,7 @@ export class HtmlExporter {
                     if (!targetFile) continue;
 
                     const ext = targetFile.extension.toLowerCase();
-                    // 跳过图片
+                    // 跳过已被 Base64 化的图片
                     if (['png','jpg','jpeg','gif','svg','webp','bmp'].includes(ext)) continue;
 
                     // 初始化 assets 目录
@@ -82,56 +88,88 @@ export class HtmlExporter {
                         hasAttachments = true;
                     }
 
-                    // 复制文件
+                    // --- 智能同步逻辑 Start ---
                     const adapter = this.app.vault.adapter as FileSystemAdapter;
                     const sourcePath = adapter.getFullPath(targetFile.path);
                     const destFileName = `${targetFile.basename}.${ext}`; // 扁平化文件名
                     const destPath = path.join(assetsDirPath, destFileName);
                     
+                    let needCopy = true;
+
                     try {
-                        fs.copyFileSync(sourcePath, destPath);
+                        if (fs.existsSync(destPath)) {
+                            const srcStat = fs.statSync(sourcePath);
+                            const destStat = fs.statSync(destPath);
+                            
+                            // 对比修改时间和大小
+                            // 如果源文件不比目标文件新，且大小一致，则跳过
+                            if (srcStat.mtimeMs <= destStat.mtimeMs && srcStat.size === destStat.size) {
+                                needCopy = false;
+                                skippedFiles++;
+                            }
+                        }
+
+                        if (needCopy) {
+                            fs.copyFileSync(sourcePath, destPath);
+                            copiedFiles++;
+                        }
                     } catch (err) {
-                        console.error("复制附件失败", err);
+                        console.error("附件同步失败", err);
                     }
+                    // --- 智能同步逻辑 End ---
 
                     // 构造相对路径
                     const relativePath = `./${assetsDirName}/${encodeURIComponent(destFileName)}`;
 
-                    // 生成 HTML 结构
+                    // 生成 HTML 结构 (根据你的新要求调整)
                     const newContainer = document.createElement('div');
                     newContainer.className = 'attachment-wrapper';
 
                     if (ext === 'pdf') {
+                        // PDF: 默认不显示 embed，只显示卡片，点击预览或新窗口打开
+                        // data-src 用于后续 JS 动态加载 embed
                         newContainer.innerHTML = `
-                            <embed src="${relativePath}" type="application/pdf" width="100%" height="800px" style="border-radius:8px; border:1px solid var(--border);" />
-                            <div class="attachment-fallback">无法预览? <a href="${relativePath}" target="_blank">点击下载 ${src}</a></div>
+                            <div class="file-card pdf-card compact" data-src="${relativePath}">
+                                <div class="file-icon">📄</div>
+                                <div class="file-info">
+                                    <div class="file-name">${targetFile.basename}</div>
+                                    <div class="file-actions">
+                                        <button class="btn-preview">👁️ 预览</button>
+                                        <button class="btn-open" onclick="window.open('${relativePath}', '_blank')">↗️ 新窗口</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="pdf-preview-container" style="display:none;"></div>
                         `;
                     } else if (['mp3', 'wav', 'm4a', 'ogg', 'flac'].includes(ext)) {
                         newContainer.innerHTML = `
                             <div class="media-container audio">
                                 <audio controls src="${relativePath}"></audio>
-                                <div class="media-caption">🎵 ${src}</div>
+                                <div class="media-caption">${targetFile.basename}</div>
                             </div>`;
                     } else if (['mp4', 'webm', 'mov', 'mkv'].includes(ext)) {
                         newContainer.innerHTML = `
                             <div class="media-container video">
                                 <video controls src="${relativePath}"></video>
-                                <div class="media-caption">🎬 ${src}</div>
+                                <div class="media-caption">${targetFile.basename}</div>
                             </div>`;
                     } else {
-                        // 通用文件卡片
+                        // 通用文件卡片：添加 compact 类
                         let icon = '📄';
                         if(['zip','rar','7z'].includes(ext)) icon = '📦';
                         if(['doc','docx'].includes(ext)) icon = '📝';
                         if(['xls','xlsx','csv'].includes(ext)) icon = '📊';
                         if(['ppt','pptx'].includes(ext)) icon = '📽️';
+                        if(['js','py','html','css','java','cpp','c','php','json','xml','yaml'].includes(ext)) icon = '💻';
 
+                        // 显示大小 (如果能获取到)
+                        // 注意：这里只是静态 HTML，点击是下载行为
                         newContainer.innerHTML = `
-                            <a href="${relativePath}" class="file-card" download>
+                            <a href="${relativePath}" class="file-card compact" download>
                                 <div class="file-icon">${icon}</div>
                                 <div class="file-info">
-                                    <div class="file-name">${src}</div>
-                                    <div class="file-meta">点击下载 • .${ext.toUpperCase()} 文件</div>
+                                    <div class="file-name">${targetFile.basename}</div>
+                                    <div class="file-meta">.${ext.toUpperCase()} 文件</div>
                                 </div>
                                 <div class="file-download-icon">↓</div>
                             </a>`;
@@ -150,6 +188,7 @@ export class HtmlExporter {
                         link.removeAttribute('href');
                         link.setAttribute('onclick', `app.navigate('${target.basename}')`);
                         link.style.cursor = 'pointer';
+                        // 保持原样，通过 CSS 控制颜色
                     } else {
                         const span = document.createElement('span');
                         span.innerText = link.textContent || href || "";
@@ -178,7 +217,9 @@ export class HtmlExporter {
             loadingNotice.hide();
             
             let msg = `✅ 导出成功: ${path.basename(savePath)}`;
-            if (hasAttachments) msg += `\n📦 附件已导出至 assets 文件夹`;
+            if (hasAttachments) {
+                msg += `\n📦 附件同步: 复制 ${copiedFiles}, 跳过 ${skippedFiles}`;
+            }
             new Notice(msg, 5000);
 
         } catch (e) {

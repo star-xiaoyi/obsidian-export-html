@@ -10,25 +10,19 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
     const dataScript = `const WIKI_DATA = ${JSON.stringify(pages)};`;
 
     // ==========================================
-    // 1. SVG 图标定义 (内嵌以保证离线可用)
+    // 1. SVG 图标 (内嵌，确保离线/无CDN可用)
     // ==========================================
-    
-    // 太阳 (Sun Line) - 居中修正
     const svgSun = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`;
-    
-    // 月亮 (Moon Line) - 极简弯月版
     const svgMoon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
-    
-    // 菜单 (Menu)
     const svgMenu = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 4H21V6H3V4ZM3 11H21V13H3V11ZM3 18H21V20H3V18Z"></path></svg>`;
-    
-    // 文件 (File)
     const svgFile = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M21 8V20.9932C21 21.5501 20.5552 22 20.0066 22H3.9934C3.44495 22 3 21.556 3 21.0082V2.9918C3 2.45531 3.4487 2 4.00221 2H14.9968L21 8ZM19 9H14V4H5V20H19V9ZM8 7H11V9H8V7ZM8 11H16V13H8V11ZM8 15H16V17H8V15Z"></path></svg>`;
+    const svgDownload = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 16L7 11H10V4H14V11H17L12 16ZM4 18H20V20H4V18Z"/></svg>`;
+    const svgEye = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+    const svgExternal = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
 
     // ==========================================
-    // 2. CSS 样式 (分模块定义，避免截断)
+    // 2. CSS 样式 (模块化)
     // ==========================================
-    
     const cssVariables = `
         :root {
             --primary: #2563eb;
@@ -79,7 +73,7 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
         .layout-container { display: flex; width: 100%; height: 100%; }
 
         /* 左侧边栏 */
-        #sidebar { width: 260px; background: var(--sidebar-bg); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 20; flex-shrink: 0; }
+        #sidebar { width: 260px; background: var(--sidebar-bg); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 20; flex-shrink: 0; transition: transform 0.3s; }
         .search-box { padding: 12px; }
         .search-box input { width: 100%; padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border); outline: none; background: var(--bg-body); color: var(--text-main); font-size: 14px; }
         .search-box input:focus { border-color: var(--primary); }
@@ -104,47 +98,67 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
         [data-theme="dark"] code { color: #ff9580; }
     `;
 
-    // 重点：附件、卡片、媒体播放器样式
+    // 重点：卡片、附件、媒体样式
     const cssAttachments = `
-        /* 1. 文件卡片 (ZIP, RAR, Word, 通用) */
+        /* 通用卡片容器：宽度限制，样式精致 */
         .file-card {
             display: flex; align-items: center;
             background: var(--card-bg); border: 1px solid var(--card-border);
-            border-radius: 8px; padding: 12px 16px; margin: 20px auto; max-width: 600px;
+            border-radius: 8px; 
+            padding: 8px 12px; 
+            margin: 16px 0; 
+            width: 360px; /* 固定宽度，显得小巧 */
+            max-width: 100%;
             text-decoration: none !important; transition: all 0.2s; cursor: pointer;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+            user-select: none;
         }
-        .file-card:hover { border-color: var(--primary); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1); transform: translateY(-1px); }
-        .file-icon { font-size: 24px; margin-right: 16px; display: flex; align-items: center; }
-        .file-info { flex: 1; min-width: 0; }
-        .file-name { font-weight: 500; color: var(--text-main); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .file-meta { font-size: 12px; color: var(--text-sec); }
-        .file-download-icon { color: var(--text-sec); font-size: 18px; margin-left: 12px; }
+        .file-card:hover { border-color: var(--primary); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); transform: translateY(-1px); }
+        
+        /* 紧凑模式下的布局 */
+        .file-card.compact .file-icon { font-size: 20px; margin-right: 12px; display: flex; align-items: center; color: var(--text-sec); }
+        .file-card.compact .file-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+        .file-card.compact .file-name { font-weight: 500; font-size: 14px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .file-card.compact .file-meta { font-size: 11px; color: var(--text-sec); margin-top: 1px; }
+        
+        /* 按钮组 (PDF卡片用) */
+        .file-card .file-actions { display: flex; gap: 6px; margin-left: 10px; }
+        .file-card button {
+            background: transparent; border: 1px solid var(--border); border-radius: 4px;
+            color: var(--text-sec); font-size: 11px; padding: 4px 8px; cursor: pointer;
+            transition: all 0.1s; display: flex; align-items: center; gap: 4px;
+        }
+        .file-card button:hover { background: var(--hover-bg); color: var(--text-main); border-color: var(--text-sec); }
+        
+        .file-download-icon { color: var(--text-sec); opacity: 0.5; margin-left: 8px; }
+        .file-card:hover .file-download-icon { opacity: 1; color: var(--primary); }
 
-        /* 2. 媒体容器 (Audio/Video) */
+        /* 媒体播放器 */
         .media-container { 
             display: flex; flex-direction: column; align-items: center; 
-            margin: 30px 0; background: var(--card-bg); padding: 20px; 
+            margin: 30px auto; width: 100%; max-width: 600px;
+            background: var(--card-bg); padding: 16px; 
             border-radius: 12px; border: 1px solid var(--card-border);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
-        audio, video { width: 100%; outline: none; border-radius: 8px; }
-        .media-caption { margin-top: 10px; font-size: 13px; color: var(--text-sec); }
+        audio, video { width: 100%; outline: none; border-radius: 6px; }
+        .media-caption { margin-top: 8px; font-size: 12px; color: var(--text-sec); text-align: center; }
 
-        /* 3. PDF 容器 */
-        embed[type="application/pdf"] {
+        /* PDF 预览容器 (默认隐藏，点击后展开) */
+        .pdf-preview-container embed {
             display: block; width: 100%; height: 800px;
             border-radius: 8px; border: 1px solid var(--border);
-            margin: 20px 0; background: #fff;
+            margin-top: 10px; background: #fff;
         }
-        .attachment-fallback { text-align: center; color: var(--text-sec); font-size: 13px; margin-top: 5px; }
+        .pdf-preview-container.active { display: block !important; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     `;
 
-    const cssComponents = `
-        /* 右侧边缘栏 (防误触设计：width=0) */
+    const cssUI = `
+        /* 右侧边缘栏 */
         .right-edge-bar { position: fixed; right: 0; top: 0; bottom: 0; width: 0; display: flex; flex-direction: column; align-items: flex-end; z-index: 50; pointer-events: none; }
         
-        /* 隐形底盘主题按钮 */
+        /* 主题按钮 */
         .theme-toggle { 
             position: fixed; top: 20px; right: 20px; 
             width: 36px; height: 36px; 
@@ -158,7 +172,7 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
         .theme-toggle:hover { background: var(--hover-bg); color: var(--text-main); transform: scale(1.05); }
         .theme-toggle svg { display: block; }
 
-        /* 短线容器 */
+        /* 大纲 Trigger */
         .toc-trigger-container { 
             height: auto; margin-top: 30vh; 
             display: flex; flex-direction: column; align-items: flex-end; 
@@ -169,7 +183,7 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
         .toc-line.level-1 { width: 24px; } .toc-line.level-2 { width: 18px; } .toc-line.level-3 { width: 14px; } .toc-line.level-4 { width: 10px; }
         .toc-line.active { background: var(--toc-line-active); }
 
-        /* 大纲弹窗 */
+        /* 大纲 Popover */
         .toc-popover { 
             position: fixed; right: 20px; top: 30vh; 
             width: 220px; transform: translateY(-20%) translateX(20px) scale(0.95); 
@@ -179,30 +193,22 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
             pointer-events: none; transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94); 
             z-index: 51; 
         }
-        /* 隐形桥梁 */
         .toc-popover::after { content: ""; position: absolute; top: 0; bottom: 0; right: -60px; width: 80px; z-index: -1; }
         
         .toc-trigger-container:hover { opacity: 0; }
         .toc-trigger-container:hover + .toc-popover, .toc-popover:hover { opacity: 1; pointer-events: auto; transform: translateY(-20%) translateX(0) scale(1); }
         .right-edge-bar:has(.toc-popover:hover) .toc-trigger-container { opacity: 0; }
 
-        /* 大纲链接 */
-        .toc-link { 
-            display: block; padding: 8px 12px; color: var(--text-sec); 
-            font-size: 13px; text-decoration: none; border-radius: 6px; 
-            margin-bottom: 2px; line-height: 1.5; white-space: normal; 
-            word-break: break-word; transition: background 0.1s, color 0.1s; 
-            border-bottom: none !important; 
-        }
-        .toc-link.level-1 { font-weight: 600; color: var(--text-main); margin-left: 0; } 
-        .toc-link.level-2 { margin-left: 12px; } .toc-link.level-3 { margin-left: 24px; font-size: 12px; } .toc-link.level-4 { margin-left: 36px; font-size: 12px; }
+        .toc-link { display: block; padding: 8px 12px; color: var(--text-sec); font-size: 13px; text-decoration: none; border-radius: 6px; margin-bottom: 2px; line-height: 1.5; white-space: normal; word-break: break-word; transition: background 0.1s, color 0.1s; border-bottom: none !important; }
+        .toc-link.level-1 { font-weight: 600; color: var(--text-main); margin-left: 0; } .toc-link.level-2 { margin-left: 12px; } .toc-link.level-3 { margin-left: 24px; font-size: 12px; } .toc-link.level-4 { margin-left: 36px; font-size: 12px; }
         .toc-link:hover { background: var(--hover-bg); color: var(--text-main); }
         .toc-link.active { color: var(--primary); background: transparent; font-weight: 500; }
         .toc-link.active:hover { background: var(--hover-bg); color: var(--primary); }
 
-        /* 灯箱与移动端适配 */
-        #lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(5px); }
-        #lightbox img { max-width: 90vw; max-height: 90vh; box-shadow: none; border-radius: 0; cursor: zoom-out; }
+        /* 灯箱 (支持缩放) */
+        #lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 1000; overflow: hidden; }
+        #lightbox img { max-width: 90vw; max-height: 90vh; box-shadow: none; border-radius: 4px; cursor: grab; transition: transform 0.1s ease-out; transform-origin: center; will-change: transform; }
+        #lightbox img:active { cursor: grabbing; }
 
         @media (max-width: 768px) {
             #sidebar { position: fixed; height: 100%; transform: translateX(-100%); box-shadow: 2px 0 8px rgba(0,0,0,0.1); }
@@ -211,12 +217,7 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
             .right-edge-bar { display: none; }
             #mobile-menu-btn { display: flex !important; }
         }
-        #mobile-menu-btn { 
-            position: fixed; top: 20px; left: 20px; z-index: 30; 
-            background: var(--bg-body); border: 1px solid var(--border); 
-            display: none; width:36px; height:36px; align-items:center; 
-            justify-content:center; border-radius:50%; box-shadow:0 2px 5px rgba(0,0,0,0.05); 
-        }
+        #mobile-menu-btn { position: fixed; top: 20px; left: 20px; z-index: 30; background: var(--bg-body); border: 1px solid var(--border); display: none; width:36px; height:36px; align-items:center; justify-content:center; border-radius:50%; box-shadow:0 2px 5px rgba(0,0,0,0.05); }
     `;
 
     return `<!DOCTYPE html>
@@ -225,7 +226,6 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${defaultTitle}</title>
-    
     <script>
         (function() {
             const RESOURCES = {
@@ -251,7 +251,7 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
         ${cssVariables}
         ${cssLayout}
         ${cssAttachments}
-        ${cssComponents}
+        ${cssUI}
     </style>
 </head>
 <body>
@@ -287,7 +287,9 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
         </div>
     </div>
 
-    <div id="lightbox" onclick="this.style.display='none'"><img id="lightbox-img"></div>
+    <div id="lightbox" onclick="app.closeLightbox(event)">
+        <img id="lightbox-img">
+    </div>
 
     <script>
         ${dataScript}
@@ -297,28 +299,114 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
             data: WIKI_DATA,
             currentIdx: 0,
             observer: null,
+            lightboxState: { scale: 1, isDragging: false, startX: 0, startY: 0, translateX: 0, translateY: 0 },
 
             init() {
                 this.renderSidebar();
                 this.loadState();
                 
-                // 图片灯箱
+                // 全局委托：图片点击打开灯箱
                 document.getElementById('page-content').addEventListener('click', e => {
                     if(e.target.tagName === 'IMG') {
-                        document.getElementById('lightbox-img').src = e.target.src;
-                        document.getElementById('lightbox').style.display = 'flex';
+                        this.openLightbox(e.target.src);
                     }
                 });
 
-                // 点击空白处取消标题高亮
+                // PDF 按钮委托
+                document.getElementById('page-content').addEventListener('click', e => {
+                    if(e.target.classList.contains('btn-preview')) {
+                        // 找到父级卡片和对应的预览容器
+                        const card = e.target.closest('.file-card');
+                        const wrapper = card.nextElementSibling;
+                        if(wrapper && wrapper.classList.contains('pdf-preview-container')) {
+                            // 切换显示
+                            if(wrapper.innerHTML === '') {
+                                // 第一次点击：加载 embed
+                                const src = card.dataset.src;
+                                wrapper.innerHTML = \`<embed src="\${src}" type="application/pdf" />\`;
+                                wrapper.classList.add('active');
+                                e.target.innerHTML = '${svgEye} 收起';
+                            } else {
+                                // 再次点击：折叠/展开
+                                if(wrapper.classList.contains('active')) {
+                                    wrapper.classList.remove('active');
+                                    e.target.innerHTML = '${svgEye} 预览';
+                                } else {
+                                    wrapper.classList.add('active');
+                                    e.target.innerHTML = '${svgEye} 收起';
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // 点击空白处取消高亮
                 document.addEventListener('mousedown', (e) => {
                     if (!e.target.closest('.toc-link')) {
                         const targets = document.querySelectorAll('.highlight-target');
                         if (targets.length > 0) targets.forEach(t => t.classList.remove('highlight-target'));
                     }
                 });
+
+                // 灯箱事件初始化
+                this.setupLightboxEvents();
             },
 
+            // === 灯箱逻辑 (滚轮缩放 + 拖拽) ===
+            setupLightboxEvents() {
+                const img = document.getElementById('lightbox-img');
+                const lb = document.getElementById('lightbox');
+
+                lb.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+                    let newScale = this.lightboxState.scale * delta;
+                    newScale = Math.min(Math.max(0.5, newScale), 5); // 限制缩放范围
+                    this.lightboxState.scale = newScale;
+                    this.updateLightboxTransform();
+                });
+
+                img.addEventListener('mousedown', (e) => {
+                    e.preventDefault(); // 防止默认拖拽行为
+                    this.lightboxState.isDragging = true;
+                    this.lightboxState.startX = e.clientX - this.lightboxState.translateX;
+                    this.lightboxState.startY = e.clientY - this.lightboxState.translateY;
+                });
+
+                window.addEventListener('mousemove', (e) => {
+                    if (!this.lightboxState.isDragging) return;
+                    this.lightboxState.translateX = e.clientX - this.lightboxState.startX;
+                    this.lightboxState.translateY = e.clientY - this.lightboxState.startY;
+                    this.updateLightboxTransform();
+                });
+
+                window.addEventListener('mouseup', () => {
+                    this.lightboxState.isDragging = false;
+                });
+            },
+
+            updateLightboxTransform() {
+                const img = document.getElementById('lightbox-img');
+                img.style.transform = \`translate(\${this.lightboxState.translateX}px, \${this.lightboxState.translateY}px) scale(\${this.lightboxState.scale})\`;
+            },
+
+            openLightbox(src) {
+                const lb = document.getElementById('lightbox');
+                const img = document.getElementById('lightbox-img');
+                img.src = src;
+                lb.style.display = 'flex';
+                // 重置状态
+                this.lightboxState = { scale: 1, isDragging: false, startX: 0, startY: 0, translateX: 0, translateY: 0 };
+                this.updateLightboxTransform();
+            },
+
+            closeLightbox(e) {
+                if (e.target.id === 'lightbox') {
+                    e.target.style.display = 'none';
+                }
+            },
+
+            // === 基础页面逻辑 ===
             renderSidebar() {
                 document.getElementById('file-list-ul').innerHTML = this.data.map((p, i) => 
                     \`<li class="file-item" onclick="app.loadPage(\${i})" data-idx="\${i}">
