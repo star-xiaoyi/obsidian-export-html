@@ -51,7 +51,7 @@ export class HtmlExporter {
                 const renderWrapper = container.createDiv();
                 await MarkdownRenderer.render(this.app, await this.app.vault.read(file), renderWrapper, file.path, new Component());
 
-                // === 1. 图片处理 (优先 Base64，保持单文件便携) ===
+                // === 1. 图片处理 ===
                 const images = renderWrapper.querySelectorAll('img');
                 await Promise.all(Array.from(images).map(async (img) => {
                     if (!img.src.startsWith('http')) {
@@ -61,14 +61,13 @@ export class HtmlExporter {
                             const base64 = await this.blobToBase64(blob);
                             if (base64) {
                                 img.src = base64;
-                                // 增加 class 用于后续灯箱交互
                                 img.classList.add('lightbox-target');
                             }
                         } catch (e) { console.warn('图片转换失败', img.src); }
                     }
                 }));
 
-                // === 2. 附件处理 (智能增量同步) ===
+                // === 2. 附件处理 ===
                 const mediaEmbeds = renderWrapper.querySelectorAll('.internal-embed');
                 for (let i = 0; i < mediaEmbeds.length; i++) {
                     const embed = mediaEmbeds[i] as HTMLElement;
@@ -79,63 +78,57 @@ export class HtmlExporter {
                     if (!targetFile) continue;
 
                     const ext = targetFile.extension.toLowerCase();
-                    // 跳过已被 Base64 化的图片
                     if (['png','jpg','jpeg','gif','svg','webp','bmp'].includes(ext)) continue;
 
-                    // 初始化 assets 目录
                     if (!hasAttachments) {
                         if (!fs.existsSync(assetsDirPath)) fs.mkdirSync(assetsDirPath, { recursive: true });
                         hasAttachments = true;
                     }
 
-                    // --- 智能同步逻辑 Start ---
+                    // 获取文件信息 (用于增量同步 & 显示大小)
                     const adapter = this.app.vault.adapter as FileSystemAdapter;
                     const sourcePath = adapter.getFullPath(targetFile.path);
-                    const destFileName = `${targetFile.basename}.${ext}`; // 扁平化文件名
+                    const destFileName = `${targetFile.basename}.${ext}`;
                     const destPath = path.join(assetsDirPath, destFileName);
                     
+                    let fileSizeStr = "Unknown size";
                     let needCopy = true;
 
                     try {
+                        const srcStat = fs.statSync(sourcePath);
+                        fileSizeStr = this.formatBytes(srcStat.size); // 获取并格式化大小
+
                         if (fs.existsSync(destPath)) {
-                            const srcStat = fs.statSync(sourcePath);
                             const destStat = fs.statSync(destPath);
-                            
-                            // 对比修改时间和大小
-                            // 如果源文件不比目标文件新，且大小一致，则跳过
                             if (srcStat.mtimeMs <= destStat.mtimeMs && srcStat.size === destStat.size) {
                                 needCopy = false;
                                 skippedFiles++;
                             }
                         }
-
                         if (needCopy) {
                             fs.copyFileSync(sourcePath, destPath);
                             copiedFiles++;
                         }
-                    } catch (err) {
-                        console.error("附件同步失败", err);
-                    }
-                    // --- 智能同步逻辑 End ---
+                    } catch (err) { console.error("附件同步失败", err); }
 
-                    // 构造相对路径
                     const relativePath = `./${assetsDirName}/${encodeURIComponent(destFileName)}`;
-
-                    // 生成 HTML 结构 (根据你的新要求调整)
                     const newContainer = document.createElement('div');
                     newContainer.className = 'attachment-wrapper';
 
+                    // --- HTML 结构生成 (UI 调整) ---
+                    
                     if (ext === 'pdf') {
-                        // PDF: 默认不显示 embed，只显示卡片，点击预览或新窗口打开
-                        // data-src 用于后续 JS 动态加载 embed
+                        // PDF: 左图标 | 右信息 (上:名 下:按钮)
+                        // 按钮去除 Emoji，仅保留文字
                         newContainer.innerHTML = `
                             <div class="file-card pdf-card compact" data-src="${relativePath}">
                                 <div class="file-icon">📄</div>
                                 <div class="file-info">
                                     <div class="file-name">${targetFile.basename}</div>
                                     <div class="file-actions">
-                                        <button class="btn-preview">👁️ 预览</button>
-                                        <button class="btn-open" onclick="window.open('${relativePath}', '_blank')">↗️ 新窗口</button>
+                                        <button class="btn-preview">预览</button>
+                                        <button class="btn-open" onclick="window.open('${relativePath}', '_blank')">新窗口</button>
+                                        <a href="${relativePath}" class="btn-download" download>下载</a>
                                     </div>
                                 </div>
                             </div>
@@ -145,16 +138,16 @@ export class HtmlExporter {
                         newContainer.innerHTML = `
                             <div class="media-container audio">
                                 <audio controls src="${relativePath}"></audio>
-                                <div class="media-caption">${targetFile.basename}</div>
+                                <div class="media-caption">🎵 ${targetFile.basename}</div>
                             </div>`;
                     } else if (['mp4', 'webm', 'mov', 'mkv'].includes(ext)) {
                         newContainer.innerHTML = `
                             <div class="media-container video">
                                 <video controls src="${relativePath}"></video>
-                                <div class="media-caption">${targetFile.basename}</div>
+                                <div class="media-caption">🎬 ${targetFile.basename}</div>
                             </div>`;
                     } else {
-                        // 通用文件卡片：添加 compact 类
+                        // 通用文件: 左图标 | 中信息 (上:名 下:大小) | 右下载图标
                         let icon = '📄';
                         if(['zip','rar','7z'].includes(ext)) icon = '📦';
                         if(['doc','docx'].includes(ext)) icon = '📝';
@@ -162,33 +155,31 @@ export class HtmlExporter {
                         if(['ppt','pptx'].includes(ext)) icon = '📽️';
                         if(['js','py','html','css','java','cpp','c','php','json','xml','yaml'].includes(ext)) icon = '💻';
 
-                        // 显示大小 (如果能获取到)
-                        // 注意：这里只是静态 HTML，点击是下载行为
                         newContainer.innerHTML = `
                             <a href="${relativePath}" class="file-card compact" download>
                                 <div class="file-icon">${icon}</div>
                                 <div class="file-info">
                                     <div class="file-name">${targetFile.basename}</div>
-                                    <div class="file-meta">.${ext.toUpperCase()} 文件</div>
+                                    <div class="file-meta">${ext.toUpperCase()} 文件 • ${fileSizeStr}</div>
                                 </div>
-                                <div class="file-download-icon">↓</div>
+                                <div class="file-download-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                </div>
                             </a>`;
                     }
                     embed.replaceWith(newContainer);
                 }
 
-                // === 3. 内部链接处理 ===
+                // 链接处理
                 renderWrapper.querySelectorAll('a.internal-link').forEach(node => {
                     const link = node as HTMLElement;
                     const href = link.getAttribute('href');
                     const target = this.app.metadataCache.getFirstLinkpathDest(href || "", file.path);
                     const isIncluded = this.files.find(f => f === target);
-                    
                     if (isIncluded && target) {
                         link.removeAttribute('href');
                         link.setAttribute('onclick', `app.navigate('${target.basename}')`);
                         link.style.cursor = 'pointer';
-                        // 保持原样，通过 CSS 控制颜色
                     } else {
                         const span = document.createElement('span');
                         span.innerText = link.textContent || href || "";
@@ -197,7 +188,7 @@ export class HtmlExporter {
                     }
                 });
 
-                // 提取标题
+                // TOC
                 const headers = Array.from(renderWrapper.querySelectorAll('h1, h2, h3, h4, h5, h6')).map((h, index) => {
                     if (!h.id) h.id = `heading-${index}-${Date.now()}`;
                     return {
@@ -216,16 +207,16 @@ export class HtmlExporter {
             
             loadingNotice.hide();
             
-            let msg = `✅ 导出成功: ${path.basename(savePath)}`;
+            let msg = `导出成功`; // 纯文字提示
             if (hasAttachments) {
-                msg += `\n📦 附件同步: 复制 ${copiedFiles}, 跳过 ${skippedFiles}`;
+                msg += `\n附件同步: 新增 ${copiedFiles}, 跳过 ${skippedFiles}`;
             }
-            new Notice(msg, 5000);
+            new Notice(msg, 4000);
 
         } catch (e) {
             console.error(e);
             loadingNotice.hide();
-            new Notice('❌ 导出失败，请检查控制台 (Ctrl+Shift+I)');
+            new Notice('导出失败'); // 纯文字提示
         }
     }
 
@@ -236,5 +227,14 @@ export class HtmlExporter {
             reader.onerror = reject;
             reader.readAsDataURL(blob);
         });
+    }
+
+    formatBytes(bytes: number, decimals = 1) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
     }
 }

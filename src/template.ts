@@ -8,20 +8,20 @@ export interface PageData {
 
 export function getTemplate(pages: PageData[], defaultTitle: string) {
     const dataScript = `const WIKI_DATA = ${JSON.stringify(pages)};`;
+    const isSinglePage = pages.length === 1;
 
     // ==========================================
-    // 1. SVG 图标 (内嵌，确保离线/无CDN可用)
+    // 1. SVG 图标 (内嵌)
     // ==========================================
     const svgSun = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`;
     const svgMoon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
     const svgMenu = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 4H21V6H3V4ZM3 11H21V13H3V11ZM3 18H21V20H3V18Z"></path></svg>`;
-    const svgFile = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M21 8V20.9932C21 21.5501 20.5552 22 20.0066 22H3.9934C3.44495 22 3 21.556 3 21.0082V2.9918C3 2.45531 3.4487 2 4.00221 2H14.9968L21 8ZM19 9H14V4H5V20H19V9ZM8 7H11V9H8V7ZM8 11H16V13H8V11ZM8 15H16V17H8V15Z"></path></svg>`;
-    const svgDownload = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 16L7 11H10V4H14V11H17L12 16ZM4 18H20V20H4V18Z"/></svg>`;
-    const svgEye = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
-    const svgExternal = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
+    const svgFile = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2ZM18 20H6V4H13V9H18V20Z"/></svg>`;
+    const svgDownload = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
+    const svgEye = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
 
     // ==========================================
-    // 2. CSS 样式 (模块化)
+    // 2. CSS 样式
     // ==========================================
     const cssVariables = `
         :root {
@@ -39,6 +39,8 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
             --highlight-bg: rgba(37, 99, 235, 0.15);
             --card-bg: #ffffff;
             --card-border: #e0e0e0;
+            --radius-md: 10px;
+            
             --scroll-track: transparent;
             --scroll-thumb: #d3d1cb;
             --scroll-thumb-hover: #aeaca6;
@@ -61,7 +63,7 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
             --scroll-thumb: #474747;
             --scroll-thumb-hover: #5a5a5a;
         }
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: var(--scroll-track); }
         ::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 4px; }
@@ -70,10 +72,9 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
 
     const cssLayout = `
         body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; background: var(--bg-body); color: var(--text-main); height: 100vh; display: flex; overflow: hidden; transition: background 0.3s, color 0.3s; }
-        .layout-container { display: flex; width: 100%; height: 100%; }
+        .layout-container { display: flex; width: 100%; height: 100%; position: relative; }
 
-        /* 左侧边栏 */
-        #sidebar { width: 260px; background: var(--sidebar-bg); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 20; flex-shrink: 0; transition: transform 0.3s; }
+        #sidebar { width: 260px; background: var(--sidebar-bg); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 60; flex-shrink: 0; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .search-box { padding: 12px; }
         .search-box input { width: 100%; padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border); outline: none; background: var(--bg-body); color: var(--text-main); font-size: 14px; }
         .search-box input:focus { border-color: var(--primary); }
@@ -82,9 +83,8 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
         .file-item:hover { background: var(--hover-bg); color: var(--text-main); }
         .file-item.active { background: var(--hover-bg); color: var(--text-main); font-weight: 600; }
 
-        /* 主内容区 */
-        #main-scroll { flex: 1; overflow-y: overlay; scroll-behavior: smooth; position: relative; }
-        .article-container { max-width: 960px; margin: 0 auto; padding: 40px 120px 150px; }
+        #main-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; position: relative; -webkit-overflow-scrolling: touch; }
+        .article-container { max-width: 960px; margin: 0 auto; padding: 40px 120px 150px; transition: padding 0.3s; }
         
         h1.page-title { font-size: 2.4rem; font-weight: 700; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); line-height: 1.2; margin-top: 0; }
         h1, h2, h3, h4, h5, h6 { scroll-margin-top: 2em; border-radius: 6px; padding: 4px 12px; margin-left: -12px; margin-right: -12px; transition: background-color 0.2s; }
@@ -98,39 +98,72 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
         [data-theme="dark"] code { color: #ff9580; }
     `;
 
-    // 重点：卡片、附件、媒体样式
     const cssAttachments = `
-        /* 通用卡片容器：宽度限制，样式精致 */
+        /* === 文件卡片 (UI 2.0) === */
         .file-card {
-            display: flex; align-items: center;
+            display: flex; flex-direction: row; /* 横向布局 */
+            align-items: center;
             background: var(--card-bg); border: 1px solid var(--card-border);
-            border-radius: 8px; 
-            padding: 8px 12px; 
-            margin: 16px 0; 
-            width: 360px; /* 固定宽度，显得小巧 */
-            max-width: 100%;
+            border-radius: var(--radius-md); 
+            padding: 10px 14px; 
+            margin: 20px auto; 
+            width: 320px; max-width: 100%;
             text-decoration: none !important; transition: all 0.2s; cursor: pointer;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-            user-select: none;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03); user-select: none;
         }
         .file-card:hover { border-color: var(--primary); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); transform: translateY(-1px); }
         
-        /* 紧凑模式下的布局 */
-        .file-card.compact .file-icon { font-size: 20px; margin-right: 12px; display: flex; align-items: center; color: var(--text-sec); }
-        .file-card.compact .file-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
-        .file-card.compact .file-name { font-weight: 500; font-size: 14px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .file-card.compact .file-meta { font-size: 11px; color: var(--text-sec); margin-top: 1px; }
-        
-        /* 按钮组 (PDF卡片用) */
-        .file-card .file-actions { display: flex; gap: 6px; margin-left: 10px; }
-        .file-card button {
-            background: transparent; border: 1px solid var(--border); border-radius: 4px;
-            color: var(--text-sec); font-size: 11px; padding: 4px 8px; cursor: pointer;
-            transition: all 0.1s; display: flex; align-items: center; gap: 4px;
+        /* 图标区 */
+        .file-card .file-icon { 
+            font-size: 24px; color: var(--text-sec); 
+            margin-right: 14px; display: flex; align-items: center; justify-content: center;
         }
-        .file-card button:hover { background: var(--hover-bg); color: var(--text-main); border-color: var(--text-sec); }
         
-        .file-download-icon { color: var(--text-sec); opacity: 0.5; margin-left: 8px; }
+        /* 信息区 (右侧主体) */
+        .file-card .file-info { 
+            flex: 1; min-width: 0; 
+            display: flex; flex-direction: column; justify-content: center; 
+        }
+        
+        /* 文件名 (上) */
+        .file-card .file-name { 
+            font-weight: 600; /* 加粗 */
+            font-size: 14px; 
+            color: var(--text-main); 
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
+            line-height: 1.4;
+        }
+        
+        /* 元数据或按钮区 (下) */
+        .file-card .file-meta { 
+            font-size: 11px; color: var(--text-sec); margin-top: 2px; 
+            display: flex; align-items: center;
+        }
+        
+        /* PDF 按钮组 (位于信息区下方) */
+        .file-card .file-actions { 
+            display: flex; gap: 8px; margin-top: 4px; 
+        }
+        .file-card button, .file-card .btn-download {
+            background: transparent; 
+            border: 1px solid var(--border); 
+            border-radius: 4px;
+            color: var(--text-sec); font-size: 11px; 
+            padding: 2px 8px; line-height: 1.4;
+            cursor: pointer; transition: all 0.1s;
+            text-decoration: none !important;
+            flex: 1; /* 均匀分布 */
+            text-align: center;
+        }
+        .file-card button:hover, .file-card .btn-download:hover { 
+            background: var(--hover-bg); color: var(--text-main); border-color: var(--text-sec); 
+        }
+
+        /* 通用文件下载图标 (最右侧) */
+        .file-download-icon { 
+            color: var(--text-sec); opacity: 0.6; margin-left: 12px; 
+            display: flex; align-items: center;
+        }
         .file-card:hover .file-download-icon { opacity: 1; color: var(--primary); }
 
         /* 媒体播放器 */
@@ -138,16 +171,16 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
             display: flex; flex-direction: column; align-items: center; 
             margin: 30px auto; width: 100%; max-width: 600px;
             background: var(--card-bg); padding: 16px; 
-            border-radius: 12px; border: 1px solid var(--card-border);
+            border-radius: var(--radius-md); border: 1px solid var(--card-border);
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
         audio, video { width: 100%; outline: none; border-radius: 6px; }
         .media-caption { margin-top: 8px; font-size: 12px; color: var(--text-sec); text-align: center; }
 
-        /* PDF 预览容器 (默认隐藏，点击后展开) */
+        /* PDF 预览 */
         .pdf-preview-container embed {
             display: block; width: 100%; height: 800px;
-            border-radius: 8px; border: 1px solid var(--border);
+            border-radius: var(--radius-md); border: 1px solid var(--border);
             margin-top: 10px; background: #fff;
         }
         .pdf-preview-container.active { display: block !important; animation: fadeIn 0.3s ease; }
@@ -155,10 +188,16 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
     `;
 
     const cssUI = `
-        /* 右侧边缘栏 */
-        .right-edge-bar { position: fixed; right: 0; top: 0; bottom: 0; width: 0; display: flex; flex-direction: column; align-items: flex-end; z-index: 50; pointer-events: none; }
+        /* === 1. 右侧边缘栏 (核心修复) === */
+        .right-edge-bar { 
+            position: fixed; right: 0; top: 0; bottom: 0; 
+            width: 24px; /* 窄条触发区 */
+            display: flex; flex-direction: column; align-items: flex-end; 
+            z-index: 50; 
+            pointer-events: auto; /* 允许点击触发 */
+        }
         
-        /* 主题按钮 */
+        /* 隐形底盘主题按钮 */
         .theme-toggle { 
             position: fixed; top: 20px; right: 20px; 
             width: 36px; height: 36px; 
@@ -188,43 +227,77 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
             position: fixed; right: 20px; top: 30vh; 
             width: 220px; transform: translateY(-20%) translateX(20px) scale(0.95); 
             max-height: 60vh; background: var(--popover-bg); 
-            box-shadow: var(--popover-shadow); border-radius: 12px; padding: 8px; 
+            box-shadow: var(--popover-shadow); border-radius: var(--radius-md); padding: 8px; 
             overflow-x: hidden; overflow-y: auto; opacity: 0; 
             pointer-events: none; transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94); 
             z-index: 51; 
         }
         .toc-popover::after { content: ""; position: absolute; top: 0; bottom: 0; right: -60px; width: 80px; z-index: -1; }
         
+        /* 交互逻辑 */
         .toc-trigger-container:hover { opacity: 0; }
         .toc-trigger-container:hover + .toc-popover, .toc-popover:hover { opacity: 1; pointer-events: auto; transform: translateY(-20%) translateX(0) scale(1); }
         .right-edge-bar:has(.toc-popover:hover) .toc-trigger-container { opacity: 0; }
 
-        .toc-link { display: block; padding: 8px 12px; color: var(--text-sec); font-size: 13px; text-decoration: none; border-radius: 6px; margin-bottom: 2px; line-height: 1.5; white-space: normal; word-break: break-word; transition: background 0.1s, color 0.1s; border-bottom: none !important; }
-        .toc-link.level-1 { font-weight: 600; color: var(--text-main); margin-left: 0; } .toc-link.level-2 { margin-left: 12px; } .toc-link.level-3 { margin-left: 24px; font-size: 12px; } .toc-link.level-4 { margin-left: 36px; font-size: 12px; }
+        .toc-link { 
+            display: block; padding: 8px 12px; color: var(--text-sec); 
+            font-size: 13px; text-decoration: none; border-radius: 6px; 
+            margin-bottom: 2px; line-height: 1.5; white-space: normal; 
+            word-break: break-word; transition: background 0.1s, color 0.1s; 
+            border-bottom: none !important; 
+        }
+        .toc-link.level-1 { font-weight: 600; color: var(--text-main); margin-left: 0; } 
+        .toc-link.level-2 { margin-left: 12px; } .toc-link.level-3 { margin-left: 24px; font-size: 12px; } .toc-link.level-4 { margin-left: 36px; font-size: 12px; }
         .toc-link:hover { background: var(--hover-bg); color: var(--text-main); }
         .toc-link.active { color: var(--primary); background: transparent; font-weight: 500; }
         .toc-link.active:hover { background: var(--hover-bg); color: var(--primary); }
 
-        /* 灯箱 (支持缩放) */
+        /* 灯箱 */
         #lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 1000; overflow: hidden; }
         #lightbox img { max-width: 90vw; max-height: 90vh; box-shadow: none; border-radius: 4px; cursor: grab; transition: transform 0.1s ease-out; transform-origin: center; will-change: transform; }
         #lightbox img:active { cursor: grabbing; }
 
+        /* === 移动端适配 === */
+        #mobile-menu-btn { display: none; }
+
         @media (max-width: 768px) {
-            #sidebar { position: fixed; height: 100%; transform: translateX(-100%); box-shadow: 2px 0 8px rgba(0,0,0,0.1); }
+            #sidebar { position: fixed; height: 100%; transform: translateX(-100%); box-shadow: 4px 0 12px rgba(0,0,0,0.1); }
             #sidebar.open { transform: translateX(0); }
-            .article-container { padding: 80px 20px; }
-            .right-edge-bar { display: none; }
-            #mobile-menu-btn { display: flex !important; }
+            
+            /* 1. 恢复右侧边栏显示，并优化点击 */
+            .right-edge-bar { display: flex !important; width: 30px; }
+            /* 将触发区稍微调大一点点方便点击 */
+            .toc-trigger-container { padding-right: 10px; width: 40px; }
+            
+            .article-container { padding: 80px 24px; }
+
+            /* 2. 单页面隐藏左上角按钮 */
+            #mobile-menu-btn { 
+                position: fixed; top: 16px; left: 16px; 
+                display: ${isSinglePage ? 'none' : 'flex'}; 
+                align-items: center; justify-content: center;
+                background: var(--bg-body); border: 1px solid var(--border);
+                width: 40px; height: 40px; border-radius: 50%;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 90;
+                color: var(--text-sec); cursor: pointer;
+            }
+            
+            /* 移动端大纲激活状态 */
+            .toc-popover.mobile-active {
+                opacity: 1; pointer-events: auto;
+                position: fixed !important; right: 40px !important; top: 20vh !important;
+                z-index: 100; transform: scale(1) !important;
+                border: 1px solid var(--border); box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+            }
+            .theme-toggle { top: 16px; right: 16px; }
         }
-        #mobile-menu-btn { position: fixed; top: 20px; left: 20px; z-index: 30; background: var(--bg-body); border: 1px solid var(--border); display: none; width:36px; height:36px; align-items:center; justify-content:center; border-radius:50%; box-shadow:0 2px 5px rgba(0,0,0,0.05); }
     `;
 
     return `<!DOCTYPE html>
 <html lang="zh-CN" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>${defaultTitle}</title>
     <script>
         (function() {
@@ -255,7 +328,7 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
     </style>
 </head>
 <body>
-    <div class="icon-btn" id="mobile-menu-btn" onclick="app.toggleSidebar()">
+    <div id="mobile-menu-btn" onclick="app.toggleSidebar()">
         ${svgMenu}
     </div>
 
@@ -300,113 +373,110 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
             currentIdx: 0,
             observer: null,
             lightboxState: { scale: 1, isDragging: false, startX: 0, startY: 0, translateX: 0, translateY: 0 },
+            isMobileTocOpen: false,
 
             init() {
                 this.renderSidebar();
                 this.loadState();
                 
-                // 全局委托：图片点击打开灯箱
+                // 1. 右侧大纲点击逻辑 (兼容移动端)
+                const tocContainer = document.querySelector('.toc-trigger-container');
+                if (tocContainer) {
+                    tocContainer.addEventListener('click', (e) => {
+                        if (window.innerWidth <= 768) {
+                            this.toggleMobileToc(!this.isMobileTocOpen);
+                            e.stopPropagation(); // 防止冒泡
+                        }
+                    });
+                }
+
+                // 全局图片点击
                 document.getElementById('page-content').addEventListener('click', e => {
                     if(e.target.tagName === 'IMG') {
                         this.openLightbox(e.target.src);
                     }
                 });
 
-                // PDF 按钮委托
+                // PDF 按钮逻辑
                 document.getElementById('page-content').addEventListener('click', e => {
                     if(e.target.classList.contains('btn-preview')) {
-                        // 找到父级卡片和对应的预览容器
                         const card = e.target.closest('.file-card');
                         const wrapper = card.nextElementSibling;
                         if(wrapper && wrapper.classList.contains('pdf-preview-container')) {
-                            // 切换显示
                             if(wrapper.innerHTML === '') {
-                                // 第一次点击：加载 embed
                                 const src = card.dataset.src;
                                 wrapper.innerHTML = \`<embed src="\${src}" type="application/pdf" />\`;
                                 wrapper.classList.add('active');
-                                e.target.innerHTML = '${svgEye} 收起';
+                                e.target.innerText = '收起';
                             } else {
-                                // 再次点击：折叠/展开
                                 if(wrapper.classList.contains('active')) {
                                     wrapper.classList.remove('active');
-                                    e.target.innerHTML = '${svgEye} 预览';
+                                    e.target.innerText = '预览';
                                 } else {
                                     wrapper.classList.add('active');
-                                    e.target.innerHTML = '${svgEye} 收起';
+                                    e.target.innerText = '收起';
                                 }
                             }
                         }
                     }
                 });
 
-                // 点击空白处取消高亮
+                // 2. 下载确认逻辑
+                document.getElementById('page-content').addEventListener('click', e => {
+                    // 查找是否点击了下载链接 (包含通用卡片本身 或 PDF的下载按钮)
+                    const downloadLink = e.target.closest('a[download]') || e.target.closest('.btn-download');
+                    if (downloadLink) {
+                        e.preventDefault(); // 阻止默认下载
+                        
+                        // 获取文件名
+                        let fileName = 'file';
+                        const card = downloadLink.closest('.file-card');
+                        if (card) {
+                            const nameEl = card.querySelector('.file-name');
+                            if (nameEl) fileName = nameEl.innerText;
+                        }
+
+                        if (confirm(\`确认下载文件: \${fileName}?\`)) {
+                            // 手动触发下载
+                            const href = downloadLink.getAttribute('href');
+                            const a = document.createElement('a');
+                            a.href = href;
+                            a.download = '';
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                        }
+                    }
+                });
+
+                // 点击空白处关闭移动端大纲 & 取消高亮
                 document.addEventListener('mousedown', (e) => {
+                    const popover = document.getElementById('toc-popover-list');
+                    const trigger = document.querySelector('.toc-trigger-container');
+                    
+                    if (this.isMobileTocOpen && !popover.contains(e.target) && !trigger.contains(e.target)) {
+                        this.toggleMobileToc(false);
+                    }
+
                     if (!e.target.closest('.toc-link')) {
                         const targets = document.querySelectorAll('.highlight-target');
                         if (targets.length > 0) targets.forEach(t => t.classList.remove('highlight-target'));
                     }
                 });
 
-                // 灯箱事件初始化
                 this.setupLightboxEvents();
             },
 
-            // === 灯箱逻辑 (滚轮缩放 + 拖拽) ===
-            setupLightboxEvents() {
-                const img = document.getElementById('lightbox-img');
-                const lb = document.getElementById('lightbox');
-
-                lb.addEventListener('wheel', (e) => {
-                    e.preventDefault();
-                    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-                    let newScale = this.lightboxState.scale * delta;
-                    newScale = Math.min(Math.max(0.5, newScale), 5); // 限制缩放范围
-                    this.lightboxState.scale = newScale;
-                    this.updateLightboxTransform();
-                });
-
-                img.addEventListener('mousedown', (e) => {
-                    e.preventDefault(); // 防止默认拖拽行为
-                    this.lightboxState.isDragging = true;
-                    this.lightboxState.startX = e.clientX - this.lightboxState.translateX;
-                    this.lightboxState.startY = e.clientY - this.lightboxState.translateY;
-                });
-
-                window.addEventListener('mousemove', (e) => {
-                    if (!this.lightboxState.isDragging) return;
-                    this.lightboxState.translateX = e.clientX - this.lightboxState.startX;
-                    this.lightboxState.translateY = e.clientY - this.lightboxState.startY;
-                    this.updateLightboxTransform();
-                });
-
-                window.addEventListener('mouseup', () => {
-                    this.lightboxState.isDragging = false;
-                });
-            },
-
-            updateLightboxTransform() {
-                const img = document.getElementById('lightbox-img');
-                img.style.transform = \`translate(\${this.lightboxState.translateX}px, \${this.lightboxState.translateY}px) scale(\${this.lightboxState.scale})\`;
-            },
-
-            openLightbox(src) {
-                const lb = document.getElementById('lightbox');
-                const img = document.getElementById('lightbox-img');
-                img.src = src;
-                lb.style.display = 'flex';
-                // 重置状态
-                this.lightboxState = { scale: 1, isDragging: false, startX: 0, startY: 0, translateX: 0, translateY: 0 };
-                this.updateLightboxTransform();
-            },
-
-            closeLightbox(e) {
-                if (e.target.id === 'lightbox') {
-                    e.target.style.display = 'none';
+            toggleMobileToc(show) {
+                const popover = document.getElementById('toc-popover-list');
+                this.isMobileTocOpen = show;
+                if (show) {
+                    popover.classList.add('mobile-active');
+                } else {
+                    popover.classList.remove('mobile-active');
                 }
             },
 
-            // === 基础页面逻辑 ===
             renderSidebar() {
                 document.getElementById('file-list-ul').innerHTML = this.data.map((p, i) => 
                     \`<li class="file-item" onclick="app.loadPage(\${i})" data-idx="\${i}">
@@ -429,6 +499,11 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
                 this.renderToc(page.toc);
                 document.getElementById('main-scroll').scrollTop = 0;
                 localStorage.setItem('wiki_last_idx', idx);
+                
+                if (window.innerWidth <= 768) {
+                    document.getElementById('sidebar').classList.remove('open');
+                    this.toggleMobileToc(false);
+                }
 
                 setTimeout(() => {
                     if(page.toc.length > 0) this.updateActiveToc(page.toc[0].id);
@@ -459,6 +534,10 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
                 if(target) {
                     target.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     target.classList.add('highlight-target');
+                    
+                    if (this.isMobileTocOpen) {
+                        this.toggleMobileToc(false);
+                    }
                 }
             },
 
@@ -469,7 +548,9 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
                 if(activeLine) activeLine.classList.add('active');
                 if(activeLink) {
                     activeLink.classList.add('active');
-                    if(getComputedStyle(document.querySelector('.toc-popover')).opacity === '1') activeLink.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    if(window.innerWidth > 768 && getComputedStyle(document.querySelector('.toc-popover')).opacity === '1') {
+                        activeLink.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
                 }
             },
 
@@ -514,6 +595,47 @@ export function getTemplate(pages: PageData[], defaultTitle: string) {
 
             toggleSidebar() {
                 document.getElementById('sidebar').classList.toggle('open');
+            },
+
+            setupLightboxEvents() {
+                const img = document.getElementById('lightbox-img');
+                const lb = document.getElementById('lightbox');
+                lb.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+                    let newScale = this.lightboxState.scale * delta;
+                    newScale = Math.min(Math.max(0.5, newScale), 5);
+                    this.lightboxState.scale = newScale;
+                    this.updateLightboxTransform();
+                });
+                img.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    this.lightboxState.isDragging = true;
+                    this.lightboxState.startX = e.clientX - this.lightboxState.translateX;
+                    this.lightboxState.startY = e.clientY - this.lightboxState.translateY;
+                });
+                window.addEventListener('mousemove', (e) => {
+                    if (!this.lightboxState.isDragging) return;
+                    this.lightboxState.translateX = e.clientX - this.lightboxState.startX;
+                    this.lightboxState.translateY = e.clientY - this.lightboxState.startY;
+                    this.updateLightboxTransform();
+                });
+                window.addEventListener('mouseup', () => { this.lightboxState.isDragging = false; });
+            },
+            updateLightboxTransform() {
+                const img = document.getElementById('lightbox-img');
+                img.style.transform = \`translate(\${this.lightboxState.translateX}px, \${this.lightboxState.translateY}px) scale(\${this.lightboxState.scale})\`;
+            },
+            openLightbox(src) {
+                const lb = document.getElementById('lightbox');
+                const img = document.getElementById('lightbox-img');
+                img.src = src;
+                lb.style.display = 'flex';
+                this.lightboxState = { scale: 1, isDragging: false, startX: 0, startY: 0, translateX: 0, translateY: 0 };
+                this.updateLightboxTransform();
+            },
+            closeLightbox(e) {
+                if (e.target.id === 'lightbox') { e.target.style.display = 'none'; }
             }
         };
         app.init();
