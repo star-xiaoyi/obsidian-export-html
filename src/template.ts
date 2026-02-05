@@ -299,12 +299,13 @@ export function getTemplate(pages: PageData[], defaultTitle: string, settings: {
     `;
 
     const cssUI = `
-        .right-edge-bar { position: fixed; right: 0; top: 0; bottom: 0; width: 24px; display: flex; flex-direction: column; align-items: flex-end; z-index: 50; pointer-events: auto; }
+        .right-edge-bar { position: fixed; right: 0; top: 0; bottom: 0; width: 24px; z-index: 50; pointer-events: auto; }
         .theme-toggle { position: fixed; top: 20px; right: 20px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; color: var(--text-sec); background: transparent; border: none; padding: 0; line-height: 0; z-index: 52; pointer-events: auto; transition: all 0.2s; }
         .theme-toggle:hover { background: var(--hover-bg); color: var(--text-main); transform: scale(1.05); }
         .theme-toggle svg { display: block; }
 
-        .toc-trigger-container { height: auto; margin-top: 30vh; display: flex; flex-direction: column; align-items: flex-end; padding-right: 36px; gap: 14px; width: 100px; transition: opacity 0.2s; pointer-events: auto; }
+        .toc-trigger-container { position: absolute; top: 30vh; right: 0; display: flex; flex-direction: column; align-items: flex-end; padding-right: 36px; gap: 14px; width: 100px; transition: all 0.3s ease; opacity: 1; pointer-events: auto; }
+        .toc-trigger-container.centered { top: 50% !important; transform: translateY(-50%) !important; }
         .toc-line { height: 2px; background: var(--toc-line-inactive); border-radius: 2px; transition: background-color 0.2s; cursor: pointer; width: 16px; }
         .toc-line.level-1 { width: 24px; } .toc-line.level-2 { width: 18px; } .toc-line.level-3 { width: 14px; } .toc-line.level-4 { width: 10px; } .toc-line.level-5 { width: 8px; } .toc-line.level-6 { width: 6px; }
         .toc-line.active { background: var(--toc-line-active); }
@@ -438,10 +439,19 @@ export function getTemplate(pages: PageData[], defaultTitle: string, settings: {
             observer: null,
             lightboxState: { scale: 1, isDragging: false, startX: 0, startY: 0, translateX: 0, translateY: 0 },
             isMobileTocOpen: false,
+            isScrolling: false,
 
             init() {
                 this.renderSidebar();
                 this.loadState();
+                
+                // 监听窗口大小变化，调整大纲横线位置
+                window.addEventListener('resize', () => {
+                    const currentPage = this.data[this.currentIdx];
+                    if (currentPage && currentPage.toc) {
+                        this.updateTocContainerPosition(currentPage.toc.length);
+                    }
+                });
                 
                 // 1. 代码块: 复制
                 document.getElementById('page-content').addEventListener('click', e => {
@@ -617,17 +627,67 @@ export function getTemplate(pages: PageData[], defaultTitle: string, settings: {
                 
                 linesContainer.innerHTML = toc.map(h => \`<div class="toc-line level-\${h.level}" data-target="\${h.id}"></div>\`).join('');
                 popoverContainer.innerHTML = toc.map(h => \`<a href="javascript:void(0)" onclick="app.scrollToHeader('\${h.id}')" class="toc-link level-\${h.level}" data-target="\${h.id}">\${h.text}</a>\`).join('');
+                
+                // 检测标题数量，决定是否居中显示大纲横线
+                this.updateTocContainerPosition(toc.length);
+                
                 this.initScrollSpy();
+            },
+            
+            updateTocContainerPosition(tocLength) {
+                const linesContainer = document.getElementById('toc-lines');
+                console.log('TOC Length:', tocLength);
+                
+                // 如果标题数量大于10，则居中显示
+                if (tocLength > 10) {
+                    linesContainer.classList.add('centered');
+                    console.log('Added centered class');
+                } else {
+                    // 否则保持默认的偏上显示
+                    linesContainer.classList.remove('centered');
+                    console.log('Removed centered class');
+                }
             },
 
             scrollToHeader(id) {
+                console.log('scrollToHeader called for:', id);
                 document.querySelectorAll('.highlight-target').forEach(t => t.classList.remove('highlight-target'));
                 const target = document.getElementById(id);
                 if(target) {
+                    // 设置滚动标志，防止 IntersectionObserver 干扰
+                    this.isScrolling = true;
+                    console.log('Set isScrolling to true');
                     target.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     target.classList.add('highlight-target');
+                    // 更新大纲高亮状态
+                    this.updateActiveToc(id);
                     if (this.isMobileTocOpen) this.toggleMobileToc(false);
+                    // 使用滚动事件检测滚动结束
+                    this.waitForScrollEnd();
                 }
+            },
+            
+            waitForScrollEnd() {
+                const mainScroll = document.getElementById('main-scroll');
+                let scrollTimeout;
+                
+                const onScroll = () => {
+                    clearTimeout(scrollTimeout);
+                    scrollTimeout = setTimeout(() => {
+                        // 滚动停止后重置标志
+                        console.log('Scroll ended, setting isScrolling to false');
+                        this.isScrolling = false;
+                        mainScroll.removeEventListener('scroll', onScroll);
+                    }, 150);
+                };
+                
+                mainScroll.addEventListener('scroll', onScroll);
+                // 安全机制：最多等待3秒后强制重置
+                setTimeout(() => {
+                    console.log('Safety timeout, setting isScrolling to false');
+                    this.isScrolling = false;
+                    mainScroll.removeEventListener('scroll', onScroll);
+                }, 3000);
             },
 
             updateActiveToc(id) {
@@ -648,8 +708,16 @@ export function getTemplate(pages: PageData[], defaultTitle: string, settings: {
                 const headers = document.querySelectorAll('#page-content h1, #page-content h2, #page-content h3, #page-content h4, #page-content h5, #page-content h6');
                 if(headers.length === 0) return;
                 this.observer = new IntersectionObserver(entries => {
+                    // 如果正在手动滚动，不更新高亮状态
+                    if (this.isScrolling) {
+                        console.log('Skipping update because isScrolling is true');
+                        return;
+                    }
                     entries.forEach(entry => {
-                        if (entry.isIntersecting) this.updateActiveToc(entry.target.id);
+                        if (entry.isIntersecting) {
+                            console.log('Updating TOC for:', entry.target.id);
+                            this.updateActiveToc(entry.target.id);
+                        }
                     });
                 }, { root: document.getElementById('main-scroll'), rootMargin: "-10% 0px -70% 0px", threshold: 0 });
                 headers.forEach(h => this.observer.observe(h));
