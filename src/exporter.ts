@@ -94,7 +94,16 @@ export class HtmlExporter {
                     }
                 });
 
-                // === 2. 代码块：Notion 风格结构化 ===
+                // === 2. 表格处理：添加包装器使其居中 ===
+                const tables = renderWrapper.querySelectorAll('table');
+                tables.forEach(table => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'table-wrapper';
+                    table.parentNode?.insertBefore(wrapper, table);
+                    wrapper.appendChild(table);
+                });
+
+                // === 3. 代码块：Notion 风格结构化 ===
                 const codeBlocks = renderWrapper.querySelectorAll('pre > code');
                 const commonLangs = ['Text', 'JavaScript', 'TypeScript', 'Python', 'Java', 'C', 'C++', 'C#', 'Go', 'Rust', 'PHP', 'SQL', 'HTML', 'CSS', 'Bash', 'JSON', 'YAML', 'Markdown', 'Dart', 'Swift', 'Kotlin'];
 

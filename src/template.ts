@@ -102,10 +102,60 @@ export function getTemplate(pages: PageData[], defaultTitle: string, settings: {
         a { color: var(--primary); text-decoration: none; cursor: pointer; border-bottom: 1px solid transparent; transition: border 0.2s; }
         a:hover { border-bottom-color: var(--primary); }
         img { max-width: 100%; border-radius: 4px; cursor: zoom-in; display: block; margin: 1.5em auto; }
-        blockquote { border-left: 3px solid var(--text-main); margin: 1.5em 0; padding-left: 1em; color: var(--text-sec); font-style: italic; }
+        blockquote { border-left: 3px solid var(--text-main); margin: 1.5em 0; padding-left: 1em; color: var(--text-sec); }
         
         code { background: var(--hover-bg); padding: 3px 6px; border-radius: 4px; font-family: monospace; font-size: 0.85em; color: #eb5757; }
         [data-theme="dark"] code { color: #ff9580; }
+        
+        /* 表格样式 */
+        .table-wrapper {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            max-width: 800px;
+        }
+        th, td {
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            text-align: center;
+        }
+        th {
+            background-color: var(--hover-bg);
+            font-weight: 600;
+        }
+        
+        /* 任务列表样式 */
+        ul.task-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        ul.task-list li {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        ul.task-list ul {
+            list-style-type: none;
+            padding-left: 20px;
+        }
+        
+        /* 上下标样式 */
+        sub, sup {
+            font-size: 0.75em;
+            line-height: 0;
+            position: relative;
+            vertical-align: baseline;
+        }
+        sub {
+            bottom: -0.25em;
+        }
+        sup {
+            top: -0.5em;
+        }
     `;
 
     // 代码块样式 (Notion Style)
@@ -256,7 +306,7 @@ export function getTemplate(pages: PageData[], defaultTitle: string, settings: {
 
         .toc-trigger-container { height: auto; margin-top: 30vh; display: flex; flex-direction: column; align-items: flex-end; padding-right: 36px; gap: 14px; width: 100px; transition: opacity 0.2s; pointer-events: auto; }
         .toc-line { height: 2px; background: var(--toc-line-inactive); border-radius: 2px; transition: background-color 0.2s; cursor: pointer; width: 16px; }
-        .toc-line.level-1 { width: 24px; } .toc-line.level-2 { width: 18px; } .toc-line.level-3 { width: 14px; } .toc-line.level-4 { width: 10px; }
+        .toc-line.level-1 { width: 24px; } .toc-line.level-2 { width: 18px; } .toc-line.level-3 { width: 14px; } .toc-line.level-4 { width: 10px; } .toc-line.level-5 { width: 8px; } .toc-line.level-6 { width: 6px; }
         .toc-line.active { background: var(--toc-line-active); }
 
         .toc-popover { position: fixed; right: 20px; top: 30vh; width: 220px; transform: translateY(-20%) translateX(20px) scale(0.95); max-height: 60vh; background: var(--popover-bg); box-shadow: var(--popover-shadow); border-radius: var(--radius-md); padding: 8px; overflow-x: hidden; overflow-y: auto; opacity: 0; pointer-events: none; transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94); z-index: 51; }
@@ -266,7 +316,7 @@ export function getTemplate(pages: PageData[], defaultTitle: string, settings: {
         .right-edge-bar:has(.toc-popover:hover) .toc-trigger-container { opacity: 0; }
 
         .toc-link { display: block; padding: 8px 12px; color: var(--text-sec); font-size: 13px; text-decoration: none; border-radius: 6px; margin-bottom: 2px; line-height: 1.5; white-space: normal; word-break: break-word; transition: background 0.1s, color 0.1s; border-bottom: none !important; }
-        .toc-link.level-1 { font-weight: 600; color: var(--text-main); margin-left: 0; } .toc-link.level-2 { margin-left: 12px; } .toc-link.level-3 { margin-left: 24px; font-size: 12px; } .toc-link.level-4 { margin-left: 36px; font-size: 12px; }
+        .toc-link.level-1 { font-weight: 600; color: var(--text-main); margin-left: 0; } .toc-link.level-2 { margin-left: 12px; } .toc-link.level-3 { margin-left: 24px; font-size: 12px; } .toc-link.level-4 { margin-left: 36px; font-size: 12px; } .toc-link.level-5 { margin-left: 48px; font-size: 11px; } .toc-link.level-6 { margin-left: 60px; font-size: 11px; }
         .toc-link:hover { background: var(--hover-bg); color: var(--text-main); }
         .toc-link.active { color: var(--primary); background: transparent; font-weight: 500; }
         .toc-link.active:hover { background: var(--hover-bg); color: var(--primary); }
