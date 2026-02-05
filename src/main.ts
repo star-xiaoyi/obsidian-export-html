@@ -21,12 +21,12 @@ export default class ExportHtmlPlugin extends Plugin {
             }
         });
 
-        // 2. 文件列表右键菜单 (支持多选)
+        // 2. 文件列表右键菜单
         this.registerEvent(
             this.app.workspace.on("file-menu", (menu: Menu, file: any) => {
                 menu.addItem((item) => {
                     item
-                        .setTitle("导出为 HTML (Export HTML)")
+                        .setTitle("导出为 HTML")
                         .setIcon("share-2")
                         .onClick(() => {
                             let filesToExport: TFile[] = [];
@@ -36,7 +36,6 @@ export default class ExportHtmlPlugin extends Plugin {
                             } else if (file instanceof TFile && file.extension === 'md') {
                                 filesToExport = [file];
                             }
-                            // 如果你能获取多选文件（Obsidian API限制较多，这里优先处理单选或文件夹）
                             if (filesToExport.length > 0) new HtmlExporter(this.app, filesToExport).export();
                         });
                 });
