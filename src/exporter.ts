@@ -103,7 +103,23 @@ export class HtmlExporter {
                     wrapper.appendChild(table);
                 });
 
-                // === 3. 代码块：Notion 风格结构化 ===
+                // === 3. 上下标处理 ===
+                const textNodes = renderWrapper.querySelectorAll('p, li, span, h1, h2, h3, h4, h5, h6');
+                textNodes.forEach(node => {
+                    if (node.nodeType === 3) return; // 跳过纯文本节点
+                    
+                    let text = node.innerHTML;
+                    
+                    // 处理下标：~内容~
+                    text = text.replace(/~([^~]+)~/g, '<sub>$1</sub>');
+                    
+                    // 处理上标：^内容^
+                    text = text.replace(/\^([^^]+)\^/g, '<sup>$1</sup>');
+                    
+                    node.innerHTML = text;
+                });
+
+                // === 4. 代码块：Notion 风格结构化 ===
                 const codeBlocks = renderWrapper.querySelectorAll('pre > code');
                 const commonLangs = ['Text', 'JavaScript', 'TypeScript', 'Python', 'Java', 'C', 'C++', 'C#', 'Go', 'Rust', 'PHP', 'SQL', 'HTML', 'CSS', 'Bash', 'JSON', 'YAML', 'Markdown', 'Dart', 'Swift', 'Kotlin'];
 
@@ -156,7 +172,7 @@ export class HtmlExporter {
                     wrapper.appendChild(preEl);
                 });
 
-                // === 3. 图片处理 ===
+                // === 5. 图片处理 ===
                 const images = renderWrapper.querySelectorAll('img');
                 await Promise.all(Array.from(images).map(async (img) => {
                     if (!img.src.startsWith('http')) {
@@ -172,7 +188,7 @@ export class HtmlExporter {
                     }
                 }));
 
-                // === 4. 附件处理 (修复大小显示) ===
+                // === 6. 附件处理 (修复大小显示) ===
                 const mediaEmbeds = renderWrapper.querySelectorAll('.internal-embed');
                 for (let i = 0; i < mediaEmbeds.length; i++) {
                     const embed = mediaEmbeds[i] as HTMLElement;
