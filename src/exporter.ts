@@ -228,9 +228,9 @@ class ExportSettingsModal extends Modal {
     
     updateFileBar() {
         if (!this.fileBarEl) return;
-        
+
         let html = '<div class="file-bar-scroll-container">';
-        
+
         if (this.files.length === 0) {
             html += '<span class="file-bar-empty">暂无文件，点击右侧 + 添加</span>';
         } else {
@@ -245,18 +245,18 @@ class ExportSettingsModal extends Modal {
                 `;
             });
         }
-        
+
         html += '</div>';
         html += `<button class="file-bar-add-btn" title="添加文件">+</button>`;
-        
+
         this.fileBarEl.innerHTML = html;
-        
+
         // 绑定添加按钮事件
         const addBtn = this.fileBarEl.querySelector('.file-bar-add-btn');
         if (addBtn) {
             addBtn.addEventListener('click', () => this.openFileSelector());
         }
-        
+
         // 绑定删除按钮事件
         const removeBtns = this.fileBarEl.querySelectorAll('.file-bar-remove');
         removeBtns.forEach(btn => {
@@ -269,7 +269,7 @@ class ExportSettingsModal extends Modal {
             });
         });
     }
-    
+
     showAllFiles() {
         // 显示所有文件的弹窗
         new AllFilesModal(this.app, this.files, (newFiles) => {
@@ -488,9 +488,13 @@ class ExportSettingsModal extends Modal {
                 color: white;
             }
             .file-bar-add-btn {
-                width: 24px;
-                height: 24px;
-                border-radius: 50%;
+                width: 24px !important;
+                height: 24px !important;
+                min-width: 24px !important;
+                min-height: 24px !important;
+                max-width: 24px !important;
+                max-height: 24px !important;
+                border-radius: 50% !important;
                 border: 1px dashed var(--background-modifier-border);
                 background: transparent;
                 color: var(--text-muted);
@@ -501,6 +505,10 @@ class ExportSettingsModal extends Modal {
                 align-items: center;
                 justify-content: center;
                 flex-shrink: 0;
+                padding: 0 !important;
+                margin: 0 !important;
+                box-sizing: border-box !important;
+                aspect-ratio: 1 / 1 !important;
             }
             .file-bar-add-btn:hover {
                 border-color: var(--interactive-accent);
@@ -599,6 +607,7 @@ class FileSelectorModal extends Modal {
     onSubmit: (files: TFile[]) => void;
     selectedListEl: HTMLElement;
     fileListContainer: HTMLElement;
+    discoverBtnEl: HTMLButtonElement | null = null;
 
     constructor(app: App, files: TFile[], alreadySelected: TFile[], onSubmit: (files: TFile[]) => void) {
         super(app);
@@ -611,9 +620,9 @@ class FileSelectorModal extends Modal {
     onOpen() {
         const { contentEl } = this;
         contentEl.addClass('file-selector-modal');
-        
+
         contentEl.createEl('h3', { text: '选择文件', cls: 'file-selector-title' });
-        
+
         // 搜索框
         const searchBox = contentEl.createDiv({ cls: 'file-selector-search' });
         const searchInput = searchBox.createEl('input', {
@@ -623,34 +632,166 @@ class FileSelectorModal extends Modal {
         searchInput.addEventListener('input', () => {
             this.filterFiles(searchInput.value);
         });
-        
+
         // 上方：可选文件列表
         contentEl.createEl('div', { text: '可选文件', cls: 'file-selector-section-title' });
         this.fileListContainer = contentEl.createDiv({ cls: 'file-selector-list' });
         this.renderFileList();
-        
+
         // 下方：已选文件列表
         contentEl.createEl('div', { text: `已选择 (${this.selectedFiles.size})`, cls: 'file-selector-section-title selected-title' });
         this.selectedListEl = contentEl.createDiv({ cls: 'file-selector-selected-list' });
         this.updateSelectedList();
-        
+
         // 按钮
         const buttonContainer = contentEl.createDiv({ cls: 'file-selector-buttons' });
-        
-        buttonContainer.createEl('button', { 
-            text: '取消', 
+
+        // 识别链接按钮
+        this.discoverBtnEl = buttonContainer.createEl('button', {
+            text: '识别链接',
+            cls: 'export-btn export-btn-link'
+        }) as HTMLButtonElement;
+        this.discoverBtnEl.addEventListener('click', () => this.handleDiscoverLinks());
+        this.updateDiscoverButton();
+
+        buttonContainer.createEl('button', {
+            text: '取消',
             cls: 'export-btn export-btn-cancel'
         }).addEventListener('click', () => this.close());
-        
-        buttonContainer.createEl('button', { 
-            text: '添加', 
+
+        buttonContainer.createEl('button', {
+            text: '添加',
             cls: 'export-btn export-btn-primary'
         }).addEventListener('click', () => {
             this.close();
             this.onSubmit(Array.from(this.selectedFiles));
         });
-        
+
         this.addStyles();
+    }
+
+    // 更新识别链接按钮状态
+    updateDiscoverButton() {
+        if (!this.discoverBtnEl) return;
+        if (this.selectedFiles.size === 0) {
+            this.discoverBtnEl.disabled = true;
+            this.discoverBtnEl.style.opacity = '0.5';
+            this.discoverBtnEl.style.cursor = 'not-allowed';
+        } else {
+            this.discoverBtnEl.disabled = false;
+            this.discoverBtnEl.style.opacity = '1';
+            this.discoverBtnEl.style.cursor = 'pointer';
+        }
+    }
+
+    // 处理识别链接
+    async handleDiscoverLinks() {
+        if (this.selectedFiles.size === 0) return;
+
+        this.discoverBtnEl!.textContent = '识别中...';
+        this.discoverBtnEl!.disabled = true;
+
+        const discoveredFiles = await this.autoDiscoverLinkedFiles();
+
+        this.discoverBtnEl!.textContent = '识别链接';
+        this.discoverBtnEl!.disabled = false;
+        this.updateDiscoverButton();
+
+        if (discoveredFiles.length === 0) {
+            new Notice('没有发现新的链接文件');
+            return;
+        }
+
+        // 打开确认弹窗
+        new LinkedFilesConfirmModal(this.app, discoveredFiles, (confirmedFiles) => {
+            if (confirmedFiles.length > 0) {
+                confirmedFiles.forEach(f => this.selectedFiles.add(f));
+                this.updateSelectedList();
+                this.renderFileList();
+                this.updateDiscoverButton();
+                new Notice(`已添加 ${confirmedFiles.length} 个链接的文件`);
+            }
+        }).open();
+    }
+
+    // 自动发现并添加链接的 Markdown 文件
+    async autoDiscoverLinkedFiles(): Promise<TFile[]> {
+        const discoveredFiles = new Set<TFile>();
+        const processedFiles = new Set<string>();
+        const selectedFilesArray = Array.from(this.selectedFiles);
+
+        const processFile = async (file: TFile) => {
+            if (processedFiles.has(file.path)) return;
+            processedFiles.add(file.path);
+
+            try {
+                const content = await this.app.vault.read(file);
+                
+                // 1. 匹配 Obsidian 内部链接：[[文件名]] 或 [[文件名|显示文本]]
+                const wikiLinkRegex = /\[\[([^\]|]+)(?:\|[^\]]*)?\]\]/g;
+                let match;
+
+                while ((match = wikiLinkRegex.exec(content)) !== null) {
+                    const linkPath = match[1]?.trim();
+                    if (!linkPath) continue;
+                    
+                    // 处理链接路径，移除锚点 (#heading)
+                    const cleanLinkPath = linkPath.split('#')[0];
+                    if (!cleanLinkPath) continue;
+                    
+                    // 尝试查找对应的文件
+                    const targetFile = this.app.metadataCache.getFirstLinkpathDest(cleanLinkPath, file.path);
+
+                    if (targetFile && targetFile.extension === 'md') {
+                        // 检查是否已经在选择列表中
+                        const alreadySelected = selectedFilesArray.some(f => f.path === targetFile.path);
+                        const alreadyDiscovered = Array.from(discoveredFiles).some(f => f.path === targetFile.path);
+                        if (!alreadySelected && !alreadyDiscovered) {
+                            discoveredFiles.add(targetFile);
+                        }
+                        // 递归处理链接的文件
+                        await processFile(targetFile);
+                    }
+                }
+
+                // 2. 匹配 Markdown 标准链接：[显示文本](文件路径)
+                const mdLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+                while ((match = mdLinkRegex.exec(content)) !== null) {
+                    const linkPath = match[2]?.trim();
+                    if (!linkPath) continue;
+                    
+                    // 跳过外部链接 (http/https)
+                    if (linkPath.startsWith('http://') || linkPath.startsWith('https://')) continue;
+                    
+                    // 处理链接路径，移除锚点 (#heading)
+                    const cleanLinkPath = linkPath.split('#')[0];
+                    if (!cleanLinkPath) continue;
+                    
+                    // 尝试查找对应的文件
+                    const targetFile = this.app.metadataCache.getFirstLinkpathDest(cleanLinkPath, file.path);
+
+                    if (targetFile && targetFile.extension === 'md') {
+                        // 检查是否已经在选择列表中
+                        const alreadySelected = selectedFilesArray.some(f => f.path === targetFile.path);
+                        const alreadyDiscovered = Array.from(discoveredFiles).some(f => f.path === targetFile.path);
+                        if (!alreadySelected && !alreadyDiscovered) {
+                            discoveredFiles.add(targetFile);
+                        }
+                        // 递归处理链接的文件
+                        await processFile(targetFile);
+                    }
+                }
+            } catch (e) {
+                console.error('处理文件失败:', file.path, e);
+            }
+        };
+
+        // 处理所有已选文件
+        for (const file of selectedFilesArray) {
+            await processFile(file);
+        }
+
+        return Array.from(discoveredFiles);
     }
     
     renderFileList() {
@@ -687,21 +828,24 @@ class FileSelectorModal extends Modal {
     updateSelectedList() {
         if (!this.selectedListEl) return;
         this.selectedListEl.empty();
-        
+
         // 更新标题
         const titleEl = this.contentEl.querySelector('.selected-title');
         if (titleEl) {
             titleEl.textContent = `已选择 (${this.selectedFiles.size})`;
         }
-        
+
+        // 更新识别链接按钮状态
+        this.updateDiscoverButton();
+
         if (this.selectedFiles.size === 0) {
-            this.selectedListEl.createEl('div', { 
-                text: '暂未选择文件', 
-                cls: 'file-selector-empty' 
+            this.selectedListEl.createEl('div', {
+                text: '暂未选择文件',
+                cls: 'file-selector-empty'
             });
             return;
         }
-        
+
         Array.from(this.selectedFiles).forEach(file => {
             const item = this.selectedListEl.createDiv({ cls: 'file-selected-item' });
             item.createEl('span', { text: file.basename, cls: 'file-selected-name' });
@@ -892,10 +1036,206 @@ class FileSelectorModal extends Modal {
                 padding: 5px 14px;
                 font-size: 12px;
             }
+            .export-btn-link {
+                background: var(--background-primary);
+                color: var(--text-normal);
+                border: 1px solid var(--background-modifier-border);
+                margin-right: auto;
+                display: inline-block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+            }
+            .export-btn-link:hover:not(:disabled) {
+                background: var(--background-modifier-hover);
+                border-color: var(--interactive-accent);
+                color: var(--interactive-accent);
+            }
+            .export-btn-link:disabled {
+                opacity: 0.5 !important;
+                cursor: not-allowed;
+            }
         `;
         document.head.appendChild(style);
     }
     
+    onClose() {
+        this.contentEl.empty();
+    }
+}
+
+// 链接文件确认弹窗
+class LinkedFilesConfirmModal extends Modal {
+    files: TFile[];
+    selectedFiles: Set<TFile> = new Set();
+    onSubmit: (files: TFile[]) => void;
+    addBtnEl: HTMLButtonElement | null = null;
+
+    constructor(app: App, files: TFile[], onSubmit: (files: TFile[]) => void) {
+        super(app);
+        this.files = files;
+        this.onSubmit = onSubmit;
+        // 默认全选
+        files.forEach(f => this.selectedFiles.add(f));
+    }
+
+    onOpen() {
+        const { contentEl } = this;
+        contentEl.addClass('linked-files-modal');
+
+        contentEl.createEl('h3', { text: `发现 ${this.files.length} 个链接的文件`, cls: 'linked-files-title' });
+
+        const descEl = contentEl.createEl('div', { cls: 'linked-files-desc' });
+        descEl.innerHTML = '以下文件被当前选中的文件引用，可以选择一起导出。<br>点击文件可取消选择。';
+
+        const fileListContainer = contentEl.createDiv({ cls: 'linked-files-list' });
+
+        this.files.forEach((file, index) => {
+            const item = fileListContainer.createDiv({ cls: 'linked-file-item' });
+            item.dataset.index = String(index);
+
+            const checkbox = item.createEl('input', {
+                type: 'checkbox',
+                cls: 'linked-file-checkbox'
+            }) as HTMLInputElement;
+            checkbox.checked = true;
+
+            const infoEl = item.createDiv({ cls: 'linked-file-info' });
+            infoEl.createEl('div', { text: file.basename, cls: 'linked-file-name' });
+            infoEl.createEl('div', { text: file.path, cls: 'linked-file-path' });
+
+            // 点击整行切换选中
+            item.addEventListener('click', (e) => {
+                if (e.target !== checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                }
+                if (checkbox.checked) {
+                    this.selectedFiles.add(file);
+                    item.classList.add('selected');
+                } else {
+                    this.selectedFiles.delete(file);
+                    item.classList.remove('selected');
+                }
+                // 更新按钮文字
+                this.updateAddButton();
+            });
+
+            item.classList.add('selected');
+        });
+
+        const buttonContainer = contentEl.createDiv({ cls: 'linked-files-buttons' });
+
+        buttonContainer.createEl('button', {
+            text: '取消',
+            cls: 'export-btn export-btn-cancel'
+        }).addEventListener('click', () => this.close());
+
+        this.addBtnEl = buttonContainer.createEl('button', {
+            text: `添加选中 (${this.selectedFiles.size})`,
+            cls: 'export-btn export-btn-primary'
+        }) as HTMLButtonElement;
+        this.addBtnEl.addEventListener('click', () => {
+            this.close();
+            this.onSubmit(Array.from(this.selectedFiles));
+        });
+
+        this.addStyles();
+    }
+
+    // 更新添加按钮文字
+    updateAddButton() {
+        if (this.addBtnEl) {
+            this.addBtnEl.textContent = `添加选中 (${this.selectedFiles.size})`;
+        }
+    }
+
+    addStyles() {
+        const style = document.createElement('style');
+        style.textContent = `
+            .modal-container:has(.linked-files-modal) .modal {
+                width: 400px !important;
+                max-width: 90vw !important;
+                height: auto !important;
+                max-height: 70vh !important;
+            }
+            .linked-files-modal {
+                width: 100% !important;
+            }
+            .linked-files-modal .modal-content {
+                padding: 20px;
+                display: flex;
+                flex-direction: column;
+            }
+            .linked-files-title {
+                margin: 0 0 8px 0;
+                font-size: 16px;
+                font-weight: 600;
+            }
+            .linked-files-desc {
+                font-size: 12px;
+                color: var(--text-muted);
+                margin-bottom: 16px;
+                line-height: 1.5;
+            }
+            .linked-files-list {
+                max-height: 300px;
+                overflow-y: auto;
+                background: var(--background-secondary);
+                border-radius: 8px;
+                padding: 8px;
+                margin-bottom: 16px;
+            }
+            .linked-file-item {
+                display: flex;
+                align-items: center;
+                padding: 8px 10px;
+                border-radius: 6px;
+                cursor: pointer;
+                transition: background 0.15s;
+                margin-bottom: 4px;
+            }
+            .linked-file-item:hover {
+                background: var(--background-modifier-hover);
+            }
+            .linked-file-item.selected {
+                background: var(--background-modifier-hover);
+            }
+            .linked-file-checkbox {
+                margin-right: 10px;
+                width: 16px;
+                height: 16px;
+                flex-shrink: 0;
+                cursor: pointer;
+            }
+            .linked-file-info {
+                flex: 1;
+                min-width: 0;
+                overflow: hidden;
+            }
+            .linked-file-name {
+                font-size: 13px;
+                font-weight: 500;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                color: var(--text-normal);
+            }
+            .linked-file-path {
+                font-size: 11px;
+                color: var(--text-muted);
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                margin-top: 2px;
+            }
+            .linked-files-buttons {
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
     onClose() {
         this.contentEl.empty();
     }
@@ -1265,12 +1605,16 @@ export class HtmlExporter {
                     const link = node as HTMLElement;
                     const href = link.getAttribute('href');
                     const target = this.app.metadataCache.getFirstLinkpathDest(href || "", file.path);
-                    const isIncluded = files.find(f => f === target);
-                    if (isIncluded && target) {
+                    const targetIndex = files.findIndex(f => f === target);
+                    if (targetIndex !== -1 && target) {
+                        // 目标文件在导出列表中，使用页面内导航
                         link.removeAttribute('href');
-                        link.setAttribute('onclick', `app.navigate('${target.basename}')`);
+                        link.setAttribute('onclick', `app.loadPage(${targetIndex}); return false;`);
                         link.style.cursor = 'pointer';
+                        link.classList.add('wiki-link');
+                        link.title = `跳转到: ${target.basename}`;
                     } else {
+                        // 目标文件不在导出列表中，转换为普通文本
                         const span = document.createElement('span');
                         span.innerText = link.textContent || href || "";
                         span.style.opacity = "0.6";

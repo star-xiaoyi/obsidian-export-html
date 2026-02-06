@@ -128,6 +128,20 @@ export function getTemplate(pages: PageData[], defaultTitle: string, settings: E
 
         a { color: var(--primary); text-decoration: none; cursor: pointer; border-bottom: 1px solid transparent; transition: border 0.2s; }
         a:hover { border-bottom-color: var(--primary); }
+        
+        /* Wiki 链接样式 */
+        a.wiki-link {
+            color: var(--primary);
+            border-bottom: 1px dashed var(--primary);
+            font-weight: 500;
+        }
+        a.wiki-link:hover {
+            background: var(--highlight-bg);
+            border-bottom-style: solid;
+            border-radius: 3px;
+            padding: 0 2px;
+            margin: 0 -2px;
+        }
         img { max-width: 100%; border-radius: 4px; cursor: zoom-in; display: block; margin: 1.5em auto; }
         blockquote { border-left: 3px solid var(--text-main); margin: 1.5em 0; padding-left: 1em; color: var(--text-sec); }
         
