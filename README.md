@@ -1,90 +1,139 @@
-# Obsidian Sample Plugin
+# Export HTML
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+将 Obsidian 笔记导出为精美的单文件 HTML，支持蓝色主题、交互式大纲、文档内搜索等功能，方便分享和离线阅读。
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+## 功能特性
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open modal (simple)" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
+### 导出功能
+- **多文件导出** - 支持导出单个文件或整个文件夹
+- **可视化设置面板** - 导出前可预览并调整各项参数
+- **批量文件选择** - 支持搜索、多选、增删文件
+- **附件自动处理** - 图片自动转 Base64，其他附件自动复制到 assets 目录
 
-## First time developing plugins?
+### 导出设置
+- **页面宽度** - 可自定义内容区域宽度（默认 960px）
+- **目录导航** - 支持开启/关闭，可选择左侧或右侧显示
+- **标题显示** - 可选择是否显示文档标题
+- **页脚设置** - 支持自定义页脚文本
 
-Quick starting guide for new plugin devs:
+### 生成的 HTML 特性
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+#### 界面与交互
+- **蓝色主题** - 清新现代的蓝色配色方案
+- **明暗主题切换** - 支持一键切换浅色/深色模式，自动保存偏好
+- **交互式大纲** - 鼠标悬停右侧边缘显示文档目录，点击快速跳转
+- **文档内搜索** - 左侧边栏支持实时搜索文档标题
+- **文件列表** - 多文件导出时显示文件列表，点击切换文档
 
-## Releasing new releases
+#### 内容渲染
+- **数学公式** - 支持 LaTeX 数学公式渲染
+- **代码高亮** - 支持多种编程语言语法高亮，带语言切换和复制按钮
+- **表格居中** - 表格自动居中显示
+- **任务列表** - 完美渲染 Obsidian 任务列表
+- **上下标** - 支持下标（~内容~）和上标（^内容^）
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+#### 媒体与附件
+- **图片预览** - 点击图片可放大查看，支持拖拽和缩放
+- **PDF 预览** - 支持内嵌 PDF 预览和下载
+- **音视频播放** - 支持 MP3、MP4 等音视频文件播放
+- **附件卡片** - 其他附件以精美卡片形式展示，显示文件类型和大小
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+#### 移动端适配
+- **响应式设计** - 完美适配手机和平板设备
+- **移动端菜单** - 小屏幕下自动切换为移动端布局
 
-## Adding your plugin to the community plugin list
+## 使用方法
 
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+### 导出笔记
 
-## How to use
+1. **命令面板** - 按 `Ctrl/Cmd + P`，输入 "导出当前文件为 HTML"
+2. **文件列表右键** - 在文件列表中右键点击文件或文件夹，选择 "导出为 HTML"
+3. **编辑器右键** - 在编辑区域右键，选择 "导出为 HTML"
 
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
+### 设置导出参数
 
-## Manually installing the plugin
+导出前会弹出设置面板，你可以：
+- 调整页面宽度
+- 开启/关闭目录导航
+- 选择目录显示位置（左侧/右侧）
+- 设置是否显示标题和页脚
+- 添加/删除要导出的文件
+- 实时预览导出效果
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
+## 安装方法
 
-## Improve code quality with eslint
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- This project already has eslint preconfigured, you can invoke a check by running`npm run lint`
-- Together with a custom eslint [plugin](https://github.com/obsidianmd/eslint-plugin) for Obsidan specific code guidelines.
-- A GitHub action is preconfigured to automatically lint every commit on all branches.
+### 手动安装
 
-## Funding URL
+1. 下载本插件的最新版本
+2. 解压后将文件夹复制到你的 Obsidian 库目录：`.obsidian/plugins/`
+3. 在 Obsidian 设置中启用插件
 
-You can include funding URLs where people who use your plugin can financially support it.
+### 通过社区插件市场（待上架）
 
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
+等待插件上架 Obsidian 社区插件市场后，可直接在设置中搜索安装。
 
-```json
-{
-    "fundingUrl": "https://buymeacoffee.com"
-}
+## 开发
+
+```bash
+# 克隆仓库
+git clone https://github.com/yourusername/export-html.git
+
+# 进入目录
+cd export-html
+
+# 安装依赖
+npm install
+
+# 开发模式（热重载）
+npm run dev
+
+# 构建生产版本
+npm run build
+
+# 代码检查
+npm run lint
 ```
 
-If you have multiple URLs, you can also do:
+## 文件结构
 
-```json
-{
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
-    }
-}
+```
+export-html/
+├── src/
+│   ├── main.ts       # 插件入口，注册命令和菜单
+│   ├── exporter.ts   # 导出逻辑和设置面板
+│   └── template.ts   # HTML 模板生成
+├── manifest.json     # 插件元数据
+├── package.json      # 项目配置
+├── styles.css        # 插件样式
+└── README.md         # 本文件
 ```
 
-## API Documentation
+## 打包文件
 
-See https://docs.obsidian.md
+发布插件时需要以下文件：
+
+| 文件 | 说明 |
+|------|------|
+| `manifest.json` | 插件元数据（ID、名称、版本、描述等） |
+| `main.js` | 编译后的主程序代码 |
+| `styles.css` | 插件样式文件 |
+
+## 技术栈
+
+- **TypeScript** - 主要开发语言
+- **Obsidian API** - 插件开发框架
+- **esbuild** - 构建工具
+- **Prism.js** - 代码语法高亮
+- **MathJax** - 数学公式渲染
+
+## 许可证
+
+0-BSD
+
+## 作者
+
+xiaoyi
+
+---
+
+如有问题或建议，欢迎提交 Issue 或 Pull Request。
