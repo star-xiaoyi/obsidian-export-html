@@ -1,10 +1,10 @@
 {
-	"id": "obsidian-export-html",
+	"id": "export-html",
 	"name": "Export HTML",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Export notes as a single-file, blue-themed interactive HTML.",
-	"author": "Me",
+	"description": "将 Obsidian 笔记导出为单文件 HTML，支持蓝色主题、交互式大纲、文档内搜索等功能，方便分享和离线阅读。",
+	"author": "xiaoyi",
 	"authorUrl": "",
 	"isDesktopOnly": true
 }
