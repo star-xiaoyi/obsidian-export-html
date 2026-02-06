@@ -1,6 +1,7 @@
 // src/exporter.ts
 import { App, TFile, MarkdownRenderer, Component, Notice, FileSystemAdapter, Modal, Setting } from 'obsidian';
 import { getTemplate, PageData } from './template';
+import { ExportHtmlSettings } from './settings';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -35,11 +36,13 @@ class ExportSettingsModal extends Modal {
     fileBarEl: HTMLElement;
     exportBtnEl: HTMLButtonElement;
     footerTextAreaEl: HTMLTextAreaElement | null = null;
+    pluginSettings: ExportHtmlSettings;
 
-    constructor(app: App, files: TFile[], onSubmit: (settings: ExportSettings, files: TFile[]) => void) {
+    constructor(app: App, files: TFile[], onSubmit: (settings: ExportSettings, files: TFile[]) => void, pluginSettings?: ExportHtmlSettings) {
         super(app);
         this.files = files;
         this.onSubmit = onSubmit;
+        this.pluginSettings = pluginSettings || { excludedFolders: [] };
         // 从 localStorage 加载设置
         this.settings = this.loadSettings();
     }
@@ -297,7 +300,17 @@ class ExportSettingsModal extends Modal {
     
     openFileSelector() {
         // 获取所有 markdown 文件
-        const allFiles = this.app.vault.getFiles().filter(f => f.extension === 'md');
+        let allFiles = this.app.vault.getFiles().filter(f => f.extension === 'md');
+        
+        // 应用排除文件夹规则
+        if (this.pluginSettings.excludedFolders && this.pluginSettings.excludedFolders.length > 0) {
+            allFiles = allFiles.filter(file => {
+                // 检查文件路径是否以排除的文件夹开头
+                return !this.pluginSettings.excludedFolders.some(folder => {
+                    return file.path.startsWith(folder + '/') || file.path === folder;
+                });
+            });
+        }
         
         // 打开文件选择弹窗，传入所有文件和已选文件
         new FileSelectorModal(this.app, allFiles, this.files, (selectedFiles) => {
@@ -1344,10 +1357,12 @@ class AllFilesModal extends Modal {
 export class HtmlExporter {
     app: App;
     files: TFile[];
+    pluginSettings: ExportHtmlSettings;
 
-    constructor(app: App, files: TFile[]) {
+    constructor(app: App, files: TFile[], pluginSettings?: ExportHtmlSettings) {
         this.app = app;
         this.files = files;
+        this.pluginSettings = pluginSettings || { excludedFolders: [] };
     }
 
     async export() {
@@ -1357,7 +1372,7 @@ export class HtmlExporter {
         }
         new ExportSettingsModal(this.app, this.files, async (settings, files) => {
             await this.executeExport(settings, files);
-        }).open();
+        }, this.pluginSettings).open();
     }
 
     async executeExport(settings: ExportSettings, files: TFile[]) {

@@ -2,10 +2,19 @@
 
 import { Plugin, TFile, TFolder, Menu } from 'obsidian';
 import { HtmlExporter } from './exporter';
+import { ExportHtmlSettingTab, ExportHtmlSettings, DEFAULT_SETTINGS } from './settings';
 
 export default class ExportHtmlPlugin extends Plugin {
+    settings: ExportHtmlSettings;
+
     async onload() {
         console.log('Export HTML 插件已加载');
+
+        // 加载设置
+        await this.loadSettings();
+
+        // 添加设置页面
+        this.addSettingTab(new ExportHtmlSettingTab(this.app, this));
 
         // 1. 命令面板入口 (Ctrl/Cmd+P)
         this.addCommand({
@@ -14,7 +23,7 @@ export default class ExportHtmlPlugin extends Plugin {
             checkCallback: (checking: boolean) => {
                 const file = this.app.workspace.getActiveFile();
                 if (file) {
-                    if (!checking) new HtmlExporter(this.app, [file]).export();
+                    if (!checking) new HtmlExporter(this.app, [file], this.settings).export();
                     return true;
                 }
                 return false;
@@ -40,7 +49,7 @@ export default class ExportHtmlPlugin extends Plugin {
                             } else if (file instanceof TFile && file.extension === 'md') {
                                 filesToExport = [file];
                             }
-                            if (filesToExport.length > 0) new HtmlExporter(this.app, filesToExport).export();
+                            if (filesToExport.length > 0) new HtmlExporter(this.app, filesToExport, this.settings).export();
                         });
                 });
             })
@@ -56,11 +65,19 @@ export default class ExportHtmlPlugin extends Plugin {
                         .setTitle("导出为 HTML")
                         .setIcon("share-2")
                         .onClick(() => {
-                            if (view.file) new HtmlExporter(this.app, [view.file]).export();
+                            if (view.file) new HtmlExporter(this.app, [view.file], this.settings).export();
                         });
                 });
             })
         );
+    }
+
+    async loadSettings() {
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    }
+
+    async saveSettings() {
+        await this.saveData(this.settings);
     }
 
     getAllFiles(folder: TFolder): TFile[] {
