@@ -24,6 +24,10 @@ export default class ExportHtmlPlugin extends Plugin {
         // 2. 文件列表右键菜单
         this.registerEvent(
             this.app.workspace.on("file-menu", (menu: Menu, file: any) => {
+                // 只处理 markdown 文件和文件夹
+                if (!(file instanceof TFolder) && !(file instanceof TFile && file.extension === 'md')) {
+                    return;
+                }
                 menu.addItem((item) => {
                     item
                         .setTitle("导出为 HTML")
@@ -42,9 +46,11 @@ export default class ExportHtmlPlugin extends Plugin {
             })
         );
 
-        // 3. 编辑器右上角菜单 (...)
+        // 3. 编辑器右键菜单
         this.registerEvent(
             this.app.workspace.on("editor-menu", (menu, editor, view) => {
+                // 确保有文件才能导出
+                if (!view.file) return;
                 menu.addItem((item) => {
                     item
                         .setTitle("导出为 HTML")

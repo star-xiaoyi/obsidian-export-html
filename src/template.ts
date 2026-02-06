@@ -103,8 +103,19 @@ export function getTemplate(pages: PageData[], defaultTitle: string, settings: E
         .file-item { padding: 8px 12px; margin-bottom: 2px; border-radius: 4px; cursor: pointer; color: var(--text-sec); font-size: 14px; display: flex; align-items: center; gap: 8px; transition: background 0.1s; }
         .file-item:hover { background: var(--hover-bg); color: var(--text-main); }
         .file-item.active { background: var(--hover-bg); color: var(--text-main); font-weight: 600; }
+        
+        /* 文件列表收起/展开 */
+        .layout-container.hide-sidebar #sidebar { transform: translateX(-100%); }
+        /* 展开状态：按钮在侧边栏右侧 */
+        .sidebar-toggle { position: fixed; bottom: 80px; left: 244px; width: 32px; height: 32px; border-radius: 50%; background: var(--sidebar-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 100; opacity: 1; pointer-events: auto; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+        .sidebar-toggle:hover { background: var(--hover-bg); border-color: var(--primary); transform: scale(1.1); }
+        /* 收起状态：按钮移动到左侧 */
+        .layout-container.hide-sidebar .sidebar-toggle { left: 20px; background: var(--bg-body); }
+        .sidebar-toggle svg { width: 16px; height: 16px; fill: var(--text-sec); transition: transform 0.3s; }
+        /* 展开时图标旋转 */
+        .layout-container:not(.hide-sidebar) .sidebar-toggle svg { transform: rotate(180deg); }
 
-        #main-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; position: relative; -webkit-overflow-scrolling: touch; }
+        #main-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; position: relative; }
         .article-container { max-width: ${settings.pageWidth}px; margin: 0 auto; padding: 40px 120px 150px; transition: padding 0.3s; }
         
         h1.page-title { font-size: 2.4rem; font-weight: 700; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); line-height: 1.2; margin-top: 0; }
@@ -318,6 +329,14 @@ export function getTemplate(pages: PageData[], defaultTitle: string, settings: E
         .right-edge-bar { position: fixed; top: 0; bottom: 0; width: 24px; z-index: 50; pointer-events: auto; }
         .right-edge-bar.position-right { right: 0; }
         .right-edge-bar.position-left { left: 0; }
+        /* 当文件列表显示且目录在左侧时，目录需要右移 */
+        .layout-container:not(.hide-sidebar):not(.single-page) .right-edge-bar.position-left { left: 260px; }
+        /* 单文件时目录在左侧边缘 */
+        .layout-container.single-page .right-edge-bar.position-left { left: 0; }
+        /* 响应式：小屏幕时目录始终在左侧 */
+        @media (max-width: 768px) {
+            .layout-container:not(.hide-sidebar):not(.single-page) .right-edge-bar.position-left { left: 0; }
+        }
         .theme-toggle { position: fixed; top: 20px; right: 20px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; color: var(--text-sec); background: transparent; border: none; padding: 0; line-height: 0; z-index: 52; pointer-events: auto; transition: all 0.2s; }
         .theme-toggle:hover { background: var(--hover-bg); color: var(--text-main); transform: scale(1.05); }
         .theme-toggle svg { display: block; }
@@ -333,9 +352,14 @@ export function getTemplate(pages: PageData[], defaultTitle: string, settings: E
         .toc-popover { position: fixed; top: 30vh; width: 220px; transform: translateY(-20%) scale(0.95); max-height: 60vh; background: var(--popover-bg); box-shadow: var(--popover-shadow); border-radius: var(--radius-md); padding: 8px; overflow-x: hidden; overflow-y: auto; opacity: 0; pointer-events: none; transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94); z-index: 51; }
         .right-edge-bar.position-right .toc-popover { right: 20px; transform: translateY(-20%) translateX(20px) scale(0.95); }
         .right-edge-bar.position-left .toc-popover { left: 20px; transform: translateY(-20%) translateX(-20px) scale(0.95); }
+        /* 当文件列表显示且目录在左侧时，popover 需要右移 */
+        .layout-container:not(.hide-sidebar):not(.single-page) .right-edge-bar.position-left .toc-popover { left: 280px; }
+        /* 单文件时 popover 在左侧 */
+        .layout-container.single-page .right-edge-bar.position-left .toc-popover { left: 20px; }
         .toc-popover::after { content: ""; position: absolute; top: 0; bottom: 0; width: 80px; z-index: -1; }
         .right-edge-bar.position-right .toc-popover::after { right: -60px; }
         .right-edge-bar.position-left .toc-popover::after { left: -60px; }
+        .layout-container:not(.hide-sidebar) .right-edge-bar.position-left .toc-popover::after { left: 200px; }
         .toc-trigger-container:hover { opacity: 0; }
         .toc-trigger-container:hover + .toc-popover, .toc-popover:hover { opacity: 1; pointer-events: auto; transform: translateY(-20%) translateX(0) scale(1); }
         .right-edge-bar:has(.toc-popover:hover) .toc-trigger-container { opacity: 0; }
@@ -423,13 +447,15 @@ export function getTemplate(pages: PageData[], defaultTitle: string, settings: E
         ${svgMenu}
     </div>
 
-    <div class="layout-container">
+    <div class="layout-container ${settings.tocPosition === 'left' ? 'toc-left' : ''} ${isSinglePage ? 'single-page' : ''}">
+        ${!isSinglePage ? `
         <aside id="sidebar">
             <div class="search-box">
                 <input type="text" placeholder="搜索文档..." oninput="app.filter(this.value)">
             </div>
             <ul class="file-list" id="file-list-ul"></ul>
         </aside>
+        ` : ''}
 
         <main id="main-scroll">
             <div class="article-container">
@@ -443,6 +469,12 @@ export function getTemplate(pages: PageData[], defaultTitle: string, settings: E
         <div class="right-edge-bar position-${settings.tocPosition}">
             <div class="toc-trigger-container" id="toc-lines"></div>
             <nav class="toc-popover" id="toc-popover-list"></nav>
+        </div>
+        ` : ''}
+        
+        ${!isSinglePage ? `
+        <div class="sidebar-toggle" onclick="app.toggleSidebar()" title="显示文件列表">
+            ${svgMenu}
         </div>
         ` : ''}
         
@@ -603,7 +635,9 @@ export function getTemplate(pages: PageData[], defaultTitle: string, settings: E
             },
 
             renderSidebar() {
-                document.getElementById('file-list-ul').innerHTML = this.data.map((p, i) => 
+                const fileListEl = document.getElementById('file-list-ul');
+                if (!fileListEl) return; // 单文件时没有文件列表
+                fileListEl.innerHTML = this.data.map((p, i) =>
                     \`<li class="file-item" onclick="app.loadPage(\${i})" data-idx="\${i}">
                         ${svgFile}
                         <span>\${p.title}</span>
@@ -614,29 +648,33 @@ export function getTemplate(pages: PageData[], defaultTitle: string, settings: E
             loadPage(idx) {
                 this.currentIdx = idx;
                 const page = this.data[idx];
+                if (!page) return; // 防止索引越界
+                
                 const titleEl = document.getElementById('page-title');
                 if (titleEl) titleEl.innerText = page.title;
                 const contentEl = document.getElementById('page-content');
-                contentEl.innerHTML = page.content;
+                if (contentEl) contentEl.innerHTML = page.content;
                 
                 document.querySelectorAll('.file-item').forEach(el => el.classList.remove('active'));
-                document.querySelector(\`.file-item[data-idx="\${idx}"]\`)?.classList.add('active');
+                document.querySelector(`.file-item[data-idx="${idx}"]`)?.classList.add('active');
                 
-                this.renderToc(page.toc);
-                document.getElementById('main-scroll').scrollTop = 0;
+                this.renderToc(page.toc || []);
+                const mainScroll = document.getElementById('main-scroll');
+                if (mainScroll) mainScroll.scrollTop = 0;
                 localStorage.setItem('wiki_last_idx', idx);
                 
                 if (window.innerWidth <= 768) {
-                    document.getElementById('sidebar').classList.remove('open');
+                    const sidebar = document.getElementById('sidebar');
+                    if (sidebar) sidebar.classList.remove('open');
                     this.toggleMobileToc(false);
                 }
 
                 setTimeout(() => {
-                    if(page.toc.length > 0) this.updateActiveToc(page.toc[0].id);
-                    if (window.MathJax && window.MathJax.typesetPromise) {
+                    if(page.toc && page.toc.length > 0) this.updateActiveToc(page.toc[0].id);
+                    if (window.MathJax && window.MathJax.typesetPromise && contentEl) {
                         window.MathJax.typesetPromise([contentEl]).catch(err => console.log(err));
                     }
-                    if (window.Prism) {
+                    if (window.Prism && contentEl) {
                         window.Prism.highlightAllUnder(contentEl);
                     }
                 }, 100);
@@ -778,7 +816,10 @@ export function getTemplate(pages: PageData[], defaultTitle: string, settings: E
             },
 
             toggleSidebar() {
-                document.getElementById('sidebar').classList.toggle('open');
+                const container = document.querySelector('.layout-container');
+                if (container) {
+                    container.classList.toggle('hide-sidebar');
+                }
             },
 
             setupLightboxEvents() {
