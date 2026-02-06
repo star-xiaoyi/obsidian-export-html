@@ -656,7 +656,7 @@ export function getTemplate(pages: PageData[], defaultTitle: string, settings: E
                 if (contentEl) contentEl.innerHTML = page.content;
                 
                 document.querySelectorAll('.file-item').forEach(el => el.classList.remove('active'));
-                document.querySelector(`.file-item[data-idx="${idx}"]`)?.classList.add('active');
+                document.querySelector('.file-item[data-idx="' + idx + '"]')?.classList.add('active');
                 
                 this.renderToc(page.toc || []);
                 const mainScroll = document.getElementById('main-scroll');
