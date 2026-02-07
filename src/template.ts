@@ -197,6 +197,14 @@ export function getTemplate(pages: PageData[], defaultTitle: string, settings: E
         sup {
             top: -0.5em;
         }
+        
+        /* 块级公式样式 */
+        .math-block {
+            text-align: center;
+            margin: 1.5em 0;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
     `;
 
     // 代码块样式 (Notion Style)

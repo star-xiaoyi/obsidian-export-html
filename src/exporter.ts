@@ -1406,22 +1406,43 @@ export class HtmlExporter {
             
             for (const file of files) {
                 const renderWrapper = container.createDiv();
-                await MarkdownRenderer.render(this.app, await this.app.vault.read(file), renderWrapper, file.path, new Component());
-
-                // === 1. 数学公式：简单还原为文本 (暂不深究渲染) ===
-                const mathElements = renderWrapper.querySelectorAll('.math, mjx-container');
-                mathElements.forEach(el => {
-                    let tex = el.querySelector('annotation[encoding="application/x-tex"]')?.textContent 
-                           || el.getAttribute('aria-label') 
-                           || el.getAttribute('alttext') 
-                           || '';
-                    if (tex) {
-                        const isBlock = el.classList.contains('math-block') || el.tagName.toLowerCase() === 'div';
-                        const span = document.createElement('span');
-                        span.textContent = isBlock ? `$$${tex}$$` : `$${tex}$`;
-                        el.replaceWith(span);
+                
+                // === 1. 数学公式预处理：保护原始 LaTeX 代码 ===
+                // 从原始内容中提取所有数学公式，使用占位符替换
+                const rawContent = await this.app.vault.read(file);
+                const mathFormulas: { type: 'inline' | 'block', content: string, placeholder: string }[] = [];
+                let placeholderIndex = 0;
+                
+                // 处理块级公式 $$...$$
+                let processedContent = rawContent.replace(/\$\$([\s\S]*?)\$\$/g, (match, tex) => {
+                    const placeholder = `MATH_PLACEHOLDER_${placeholderIndex++}`;
+                    mathFormulas.push({ type: 'block', content: tex.trim(), placeholder });
+                    return placeholder;
+                });
+                
+                // 处理行内公式 $...$
+                processedContent = processedContent.replace(/(?<!\$)\$(?!\$)([^\$\n]+?)\$(?!\$)/g, (match, tex) => {
+                    const placeholder = `MATH_PLACEHOLDER_${placeholderIndex++}`;
+                    mathFormulas.push({ type: 'inline', content: tex.trim(), placeholder });
+                    return placeholder;
+                });
+                
+                await MarkdownRenderer.render(this.app, processedContent, renderWrapper, file.path, new Component());
+                
+                // === 1.5 恢复数学公式：将占位符替换回 LaTeX 代码 ===
+                let html = renderWrapper.innerHTML;
+                mathFormulas.forEach(({ type, content, placeholder }) => {
+                    if (type === 'block') {
+                        // 块级公式：用 div 包裹，方便添加样式
+                        const replacement = `<div class="math-block">$$${content}$$</div>`;
+                        html = html.split(placeholder).join(replacement);
+                    } else {
+                        // 行内公式
+                        const replacement = `$${content}$`;
+                        html = html.split(placeholder).join(replacement);
                     }
                 });
+                renderWrapper.innerHTML = html;
 
                 // === 2. 表格处理：添加包装器使其居中 ===
                 const tables = renderWrapper.querySelectorAll('table');
@@ -1433,17 +1454,33 @@ export class HtmlExporter {
                 });
 
                 // === 3. 上下标处理 ===
+                // 先保护数学公式，避免其中的 ^ 和 ~ 被解析
+                const mathRegex = /(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g;
+                const mathPlaceholders: string[] = [];
+                
                 const textNodes = renderWrapper.querySelectorAll('p, li, span, h1, h2, h3, h4, h5, h6');
                 textNodes.forEach(node => {
                     if (node.nodeType === 3) return; // 跳过纯文本节点
                     
                     let text = node.innerHTML;
                     
+                    // 保护数学公式：替换为占位符
+                    mathPlaceholders.length = 0;
+                    text = text.replace(mathRegex, (match) => {
+                        mathPlaceholders.push(match);
+                        return `MATH_PROTECT_${mathPlaceholders.length - 1}`;
+                    });
+                    
                     // 处理下标：~内容~
                     text = text.replace(/~([^~]+)~/g, '<sub>$1</sub>');
                     
                     // 处理上标：^内容^
                     text = text.replace(/\^([^^]+)\^/g, '<sup>$1</sup>');
+                    
+                    // 恢复数学公式
+                    mathPlaceholders.forEach((formula, index) => {
+                        text = text.replace(`MATH_PROTECT_${index}`, formula);
+                    });
                     
                     node.innerHTML = text;
                 });
