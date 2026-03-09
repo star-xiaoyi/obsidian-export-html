@@ -785,7 +785,7 @@ class ExportSettingsModal extends Modal {
             .export-right-panel {
                 flex: 1;
                 padding: 20px;
-                overflow-y: auto;
+                overflow: hidden;
                 display: flex;
                 flex-direction: column;
             }
@@ -804,6 +804,8 @@ class ExportSettingsModal extends Modal {
                 position: relative;
                 background: var(--background-secondary);
                 border-radius: 8px;
+                flex: 1;
+                min-height: 0;
             }
             /* 可拖动的白纸 */
             .export-preview-paper {
@@ -812,7 +814,6 @@ class ExportSettingsModal extends Modal {
                 background: var(--background-primary);
                 border-radius: 4px;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                min-height: 100%;
                 height: max-content;
                 padding: 20px;
                 display: block;
@@ -1083,16 +1084,49 @@ class ExportSettingsModal extends Modal {
                 color: var(--text-normal);
                 flex: 1;
             }
-            /* 文件选择栏 */
+            /* 文件选择栏 - 流光边框特效 */
             .export-file-bar {
                 display: flex;
                 align-items: center;
                 gap: 8px;
                 padding: 10px 12px;
-                background: var(--background-secondary);
                 border-radius: 6px;
-                margin-top: 10px;
+                margin-top: 15px;
                 min-height: 40px;
+                flex-shrink: 0;
+                position: relative;
+                z-index: 1;
+                overflow: hidden;
+            }
+
+            /* 旋转的流光渐变层 - 无缝连续双轨赛车特效 */
+            .export-file-bar::before {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 2500px;
+                height: 2500px;
+                transform: translate(-50%, -50%);
+                background: conic-gradient(#ff4500, #ffa800, #ffd633, #9ccc65, #00ced1, #1e90ff, #c678dd, #ff4500);
+                animation: border-flow 4s linear infinite;
+                z-index: -2;
+            }
+
+            /* 内部背景层，遮盖中心区域，只露出 1px 宽度的流光边框 */
+            .export-file-bar::after {
+                content: '';
+                position: absolute;
+                inset: 1px;
+                background: var(--background-secondary);
+                border-radius: 5px;
+                z-index: -1;
+            }
+
+            /* 流光旋转动画 - 无缝连续 */
+            @keyframes border-flow {
+                0% { transform: translate(-50%, -50%) rotate(0deg); }
+                100% { transform: translate(-50%, -50%) rotate(360deg); }
             }
             .file-bar-scroll-container {
                 display: flex;

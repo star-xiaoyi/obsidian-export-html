@@ -1,10 +1,9 @@
 {
 	"id": "export-html",
 	"name": "Export HTML",
-	"version": "1.0.0",
-	"minAppVersion": "0.15.0",
+	"version": "0.1.0",
 	"description": "将 Obsidian 笔记导出为单文件 HTML，支持蓝色主题、交互式大纲、文档内搜索等功能，方便分享和离线阅读。",
 	"author": "xiaoyi",
-	"authorUrl": "",
+	"authorUrl": "https://github.com/star-xiaoyi",
 	"isDesktopOnly": true
 }
