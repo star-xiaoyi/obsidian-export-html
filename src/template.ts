@@ -98,8 +98,13 @@ export function getTemplate(pages: PageData[], defaultTitle: string, settings: E
     `;
 
     const cssLayout = `
-        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; background: var(--bg-body); color: var(--text-main); height: 100vh; display: flex; overflow: hidden; transition: background 0.3s, color 0.3s; }
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; background: var(--bg-body); color: var(--text-main); height: 100vh; display: flex; overflow: hidden; transition: background 0.3s, color 0.3s; line-height: 1.7; letter-spacing: 0.01em; }
         .layout-container { display: flex; width: 100%; height: 100%; position: relative; }
+        
+        /* 全局排版与行距 - Notion 风格呼吸感 */
+        p { margin: 1em 0; }
+        ul, ol { margin: 1em 0; padding-left: 1.5em; }
+        li { margin: 0.5em 0; }
 
         #sidebar { width: 260px; background: var(--sidebar-bg); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 60; flex-shrink: 0; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .search-box { padding: 12px; }
@@ -124,12 +129,21 @@ export function getTemplate(pages: PageData[], defaultTitle: string, settings: E
         #main-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; position: relative; }
         .article-container { max-width: ${settings.pageWidth}px; margin: 0 auto; padding: 40px 120px 150px; transition: padding 0.3s; }
         
-        h1.page-title { font-size: 2.4rem; font-weight: 700; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); line-height: 1.2; margin-top: 0; }
+        h1.page-title { font-size: 2rem; font-weight: 700; margin-top: 0; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); line-height: 1.3; letter-spacing: -0.01em; }
         
         h1, h2, h3, h4, h5, h6 { 
             scroll-margin-top: 0; 
             border-radius: 6px; padding: 4px 12px; margin-left: -12px; margin-right: -12px; transition: background-color 0.2s; 
+            letter-spacing: -0.01em;
         }
+        
+        /* 标题大小缩放 - 上边距大于下边距 */
+        h1 { font-size: 1.75rem; font-weight: 700; margin-top: 2.5rem; margin-bottom: 0.75rem; line-height: 1.35; }
+        h2 { font-size: 1.5rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.6rem; line-height: 1.4; }
+        h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.75rem; margin-bottom: 0.5rem; line-height: 1.45; }
+        h4 { font-size: 1.1rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.4rem; line-height: 1.5; }
+        h5 { font-size: 1rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.35rem; line-height: 1.5; }
+        h6 { font-size: 0.9rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.3rem; line-height: 1.5; color: var(--text-sec); }
         .highlight-target { background-color: var(--highlight-bg); }
 
         a { color: var(--primary); text-decoration: none; cursor: pointer; border-bottom: 1px solid transparent; transition: border 0.2s; }
@@ -151,8 +165,21 @@ export function getTemplate(pages: PageData[], defaultTitle: string, settings: E
         img { max-width: 100%; border-radius: 4px; cursor: zoom-in; display: block; margin: 1.5em auto; }
         blockquote { border-left: 3px solid var(--text-main); margin: 1.5em 0; padding-left: 1em; color: var(--text-sec); }
         
-        code { background: var(--hover-bg); padding: 3px 6px; border-radius: 4px; font-family: monospace; font-size: 0.85em; color: #eb5757; }
-        [data-theme="dark"] code { color: #ff9580; }
+        /* 行内代码 - Notion 风格 */
+        code {
+            background: #f1f1ef;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
+            font-size: 0.875em;
+            color: #eb5757;
+            font-weight: 500;
+            letter-spacing: -0.01em;
+        }
+        [data-theme="dark"] code {
+            background: #2a2a2a;
+            color: #ff9580;
+        }
         
         /* 表格样式 */
         .table-wrapper {
@@ -213,7 +240,7 @@ export function getTemplate(pages: PageData[], defaultTitle: string, settings: E
         }
     `;
 
-    // 代码块样式 (Notion Style)
+    // 代码块样式 (极简 Notion 风格)
     const cssCodeBlocks = `
         .copy-code-button { display: none !important; }
 
@@ -221,48 +248,63 @@ export function getTemplate(pages: PageData[], defaultTitle: string, settings: E
             position: relative;
             background: var(--code-bg);
             border-radius: var(--radius-md);
-            margin: 16px 0;
+            margin: 20px 0;
             overflow: hidden;
-            border: 1px solid transparent; 
+            border: 1px solid var(--border);
         }
-        [data-theme="dark"] .code-block-container { border-color: var(--border); }
+        [data-theme="dark"] .code-block-container { 
+            border-color: var(--border); 
+        }
         
-        /* 操作栏 */
-        .code-controls {
-            position: absolute;
-            top: 6px;
-            right: 6px;
+        /* 极简顶部栏 - Notion 风格 */
+        .code-header {
             display: flex;
             align-items: center;
-            gap: 12px;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-            z-index: 10;
-            background: var(--code-bg);
-            padding-left: 8px;
-            border-radius: 4px;
+            justify-content: space-between;
+            padding: 8px 16px;
+            background: transparent;
+            border-bottom: 1px solid var(--border);
+            min-height: 36px;
         }
-        .code-block-container:hover .code-controls { opacity: 1; }
         
-        /* 语言下拉框: 居中显示 */
+        /* 语言选择器 - 隐式设计 */
         .lang-select {
             background: transparent; 
             border: 1px solid transparent;
             color: var(--text-sec); 
-            font-size: 12px;
-            cursor: pointer; outline: none; font-family: inherit;
+            font-size: 11px;
+            cursor: pointer; 
+            outline: none; 
+            font-family: inherit;
             appearance: none; 
             font-weight: 500;
             padding: 4px 8px;
             border-radius: 4px;
-            transition: all 0.1s;
+            transition: all 0.15s ease;
             white-space: nowrap;
-            text-align: center;      /* 文字居中 */
-            text-align-last: center; /* 确保选中项居中 */
+            text-align: center;
+            text-align-last: center;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            min-width: 70px;
         }
-        .lang-select:hover { background: var(--hover-bg); color: var(--text-main); }
+        .lang-select:hover { 
+            background: var(--hover-bg);
+            color: var(--text-main); 
+        }
+        .lang-select:focus {
+            border-color: var(--border);
+            background: var(--hover-bg);
+        }
         
-        [data-theme="dark"] .lang-select { color-scheme: dark; color: #d4d4d4; }
+        [data-theme="dark"] .lang-select { 
+            color-scheme: dark; 
+            color: #888; 
+        }
+        [data-theme="dark"] .lang-select:hover {
+            background: var(--hover-bg);
+            color: #ccc;
+        }
         [data-theme="dark"] .lang-select option { background-color: #2a2a2a; color: #d4d4d4; }
         
         .lang-select::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -271,24 +313,43 @@ export function getTemplate(pages: PageData[], defaultTitle: string, settings: E
         .lang-select::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
         [data-theme="dark"] .lang-select::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); }
 
-        /* 复制按钮 */
+        /* 复制按钮 - 隐式设计 */
         .code-copy-btn {
             background: transparent; 
             border: 1px solid transparent;
-            color: var(--text-sec); font-size: 12px;
-            cursor: pointer; padding: 4px 8px;
+            color: var(--text-sec); 
+            font-size: 11px;
+            cursor: pointer; 
+            padding: 4px 10px;
             border-radius: 4px;
-            display: flex; align-items: center; gap: 4px;
+            display: flex; 
+            align-items: center; 
+            gap: 4px;
             font-family: inherit;
-            transition: all 0.1s;
+            font-weight: 500;
+            transition: all 0.15s ease;
             white-space: nowrap;
         }
-        .code-copy-btn:hover { background: var(--hover-bg); color: var(--text-main); }
+        .code-copy-btn:hover { 
+            background: var(--hover-bg);
+            color: var(--text-main); 
+        }
+        .code-copy-btn:active {
+            transform: scale(0.98);
+        }
+        
+        [data-theme="dark"] .code-copy-btn {
+            color: #888;
+        }
+        [data-theme="dark"] .code-copy-btn:hover {
+            background: var(--hover-bg);
+            color: #ccc;
+        }
 
         /* 代码区域 */
         .code-block-container pre {
             margin: 0 !important;
-            padding: 34px 16px 16px !important;
+            padding: 16px 20px !important;
             overflow-x: auto;
             background: transparent !important;
             border: none !important;
@@ -300,15 +361,15 @@ export function getTemplate(pages: PageData[], defaultTitle: string, settings: E
         .code-block-container pre::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.15); }
         [data-theme="dark"] .code-block-container pre::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
 
+        /* 移除颜色覆盖，让 Prism 高亮生效 */
         .code-block-container code {
             background: transparent !important;
             padding: 0 !important;
             border-radius: 0 !important;
             font-size: 13px;
-            line-height: 1.6;
-            color: var(--text-main);
+            line-height: 1.5;
             white-space: pre;
-            font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+            font-family: SFMono-Regular, Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Liberation Mono", Menlo, monospace;
         }
     `;
 
@@ -443,20 +504,47 @@ export function getTemplate(pages: PageData[], defaultTitle: string, settings: E
     <title>${defaultTitle}</title>
     <script>
         (function() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
             const RESOURCES = {
-                prismCss: { primary: 'https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css', fallback: 'https://unpkg.com/prismjs@1.29.0/themes/prism.min.css' },
+                prismCssLight: { primary: 'https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css', fallback: 'https://unpkg.com/prismjs@1.29.0/themes/prism.min.css' },
+                prismCssDark: { primary: 'https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css', fallback: 'https://unpkg.com/prismjs@1.29.0/themes/prism-tomorrow.min.css' },
+                prismJs: { primary: 'https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js', fallback: 'https://unpkg.com/prismjs@1.29.0/components/prism-core.min.js' },
+                prismAutoloader: { primary: 'https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js', fallback: 'https://unpkg.com/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js' },
                 mathJax: { primary: 'https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js', fallback: 'https://unpkg.com/mathjax@3.2.2/es5/tex-mml-chtml.js' }
             };
-            function loadCSS(config) {
-                const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = config.primary;
-                link.onerror = function() { const fl = document.createElement('link'); fl.rel = 'stylesheet'; fl.href = config.fallback; document.head.appendChild(fl); };
+            
+            function loadCSS(config, id) {
+                const link = document.createElement('link'); 
+                link.rel = 'stylesheet'; 
+                link.href = config.primary;
+                if (id) link.id = id;
+                link.onerror = function() { 
+                    const fl = document.createElement('link'); 
+                    fl.rel = 'stylesheet'; 
+                    fl.href = config.fallback; 
+                    if (id) fl.id = id;
+                    document.head.appendChild(fl); 
+                };
                 document.head.appendChild(link);
+                return link;
             }
-            function loadJS(config) {
-                const script = document.createElement('script'); script.src = config.primary; script.async = true;
-                script.onerror = function() { const fs = document.createElement('script'); fs.src = config.fallback; fs.async = true; document.head.appendChild(fs); };
+            
+            function loadJS(config, onLoad) {
+                const script = document.createElement('script'); 
+                script.src = config.primary; 
+                script.async = true;
+                if (onLoad) script.onload = onLoad;
+                script.onerror = function() { 
+                    const fs = document.createElement('script'); 
+                    fs.src = config.fallback; 
+                    fs.async = true;
+                    if (onLoad) fs.onload = onLoad;
+                    document.head.appendChild(fs); 
+                };
                 document.head.appendChild(script);
+                return script;
             }
+            
             window.MathJax = {
                 tex: {
                     inlineMath: [['$', '$'], ['\\\\(', '\\\\)']],
@@ -465,7 +553,20 @@ export function getTemplate(pages: PageData[], defaultTitle: string, settings: E
                 svg: { fontCache: 'global' },
                 startup: { pageReady: () => MathJax.startup.defaultPageReady() }
             };
-            loadCSS(RESOURCES.prismCss);
+            
+            // 加载对应主题的 Prism CSS
+            loadCSS(currentTheme === 'dark' ? RESOURCES.prismCssDark : RESOURCES.prismCssLight, 'prism-theme-css');
+            
+            // 依次加载 PrismJS 核心和 autoloader
+            loadJS(RESOURCES.prismJs, function() {
+                loadJS(RESOURCES.prismAutoloader, function() {
+                    // Prism 加载完成后，如果页面已有代码块，触发高亮
+                    if (window.Prism && document.getElementById('page-content')) {
+                        window.Prism.highlightAllUnder(document.getElementById('page-content'));
+                    }
+                });
+            });
+            
             loadJS(RESOURCES.mathJax);
         })();
     </script>
@@ -830,10 +931,20 @@ export function getTemplate(pages: PageData[], defaultTitle: string, settings: E
                 html.setAttribute('data-theme', newTheme);
                 localStorage.setItem('wiki_theme', newTheme);
                 this.updateThemeIcon(newTheme);
+                this.updatePrismTheme(newTheme);
             },
 
             updateThemeIcon(theme) {
                 document.getElementById('theme-icon-container').innerHTML = theme === 'dark' ? ICONS.moon : ICONS.sun;
+            },
+
+            updatePrismTheme(theme) {
+                const prismLink = document.getElementById('prism-theme-css');
+                if (prismLink) {
+                    const lightTheme = 'https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css';
+                    const darkTheme = 'https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css';
+                    prismLink.href = theme === 'dark' ? darkTheme : lightTheme;
+                }
             },
 
             loadState() {

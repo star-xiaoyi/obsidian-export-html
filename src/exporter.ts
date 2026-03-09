@@ -106,6 +106,10 @@ class ExportSettingsModal extends Modal {
                     .onChange(v => {
                         this.settings.pageWidth = parseInt(v) || 960;
                         this.updatePaperSize();
+                        this.autoFitScale(); // 新增：修改宽度后立刻自适应
+                        setTimeout(() => {
+                            this.previewEl.scrollLeft = (this.previewEl.scrollWidth - this.previewEl.clientWidth) / 2;
+                        }, 10);
                     });
                 // 限制输入框宽度并居中
                 t.inputEl.style.width = '80px';
@@ -278,15 +282,16 @@ class ExportSettingsModal extends Modal {
     
     updatePaperSize() {
         if (!this.paperEl) return;
-        const width = Math.min(this.settings.pageWidth, 500); // 最大500px
+        const width = this.settings.pageWidth;
         this.paperEl.style.width = width + 'px';
     }
 
     async updatePreviewContent() {
-        if (!this.paperEl) return;
+        if (!this.paperEl || !this.previewEl) return;
 
-        // 保存当前滚动位置
-        const savedScrollTop = this.paperEl.scrollTop;
+        // 1. 改为保存外层容器(previewEl)的当前滚动位置
+        const savedScrollTop = this.previewEl.scrollTop;
+        const savedScrollLeft = this.previewEl.scrollLeft;
 
         // 清空现有内容
         this.paperEl.empty();
@@ -376,10 +381,26 @@ class ExportSettingsModal extends Modal {
             });
         }
 
-        // 恢复滚动位置
+        // 2. 恢复/初始化外层容器的滚动位置
         setTimeout(() => {
-            if (this.paperEl) this.paperEl.scrollTop = savedScrollTop;
-        }, 10);
+            if (!this.previewEl) return;
+
+            // 恢复垂直滚动
+            this.previewEl.scrollTop = savedScrollTop;
+
+            // 如果是初始状态（之前没有横向滚动），强行自适应缩放并水平居中
+            if (savedScrollLeft === 0) {
+                this.autoFitScale(); // 新增：初始加载自适应大小
+
+                // 延迟 10ms 等待浏览器应用 zoom 属性撑开 scrollWidth 后再计算居中
+                setTimeout(() => {
+                    this.previewEl.scrollLeft = (this.previewEl.scrollWidth - this.previewEl.clientWidth) / 2;
+                }, 10);
+            } else {
+                // 否则恢复之前的横向滚动位置
+                this.previewEl.scrollLeft = savedScrollLeft;
+            }
+        }, 50); // 将延时设为 50ms，确保 Markdown 渲染完全撑开容器后再计算居中
     }
 
     // 解析 Frontmatter
@@ -540,9 +561,9 @@ class ExportSettingsModal extends Modal {
         this.previewEl.addEventListener('mouseup', handleMouseUp);
         this.previewEl.addEventListener('mouseleave', handleMouseUp);
 
-        // 双击重置位置
+        // 双击重置位置与大小
         this.previewEl.addEventListener('dblclick', () => {
-            this.currentScale = 1;
+            this.autoFitScale(); // 修改：从 this.currentScale = 1 改为自适应
             this.currentTranslateX = 0;
             this.currentTranslateY = 0;
             this.updatePaperTransform();
@@ -551,13 +572,36 @@ class ExportSettingsModal extends Modal {
             this.previewEl.scrollTop = 0;
         });
 
-        // Ctrl + 滚轮缩放画布
+        // Ctrl + 滚轮缩放画布 (以鼠标为中心缩放)
         this.previewEl.addEventListener('wheel', (e: WheelEvent) => {
             if (e.ctrlKey || e.metaKey) {
                 e.preventDefault();
+
+                // 1. 获取鼠标相对于外层可视容器(previewEl)的局部坐标
+                const rect = this.previewEl.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+
+                // 2. 计算新旧缩放比例
+                const oldScale = this.currentScale;
                 const zoomAmount = e.deltaY > 0 ? -0.1 : 0.1;
-                this.currentScale = Math.max(0.3, Math.min(3.0, this.currentScale + zoomAmount));
+                const newScale = Math.max(0.3, Math.min(3.0, oldScale + zoomAmount));
+
+                if (oldScale === newScale) return;
+
+                // 3. 核心数学公式：计算缩放后需要补偿的滚动距离
+                // 原理：(鼠标位置 + 原滚动距离) * (新缩放率 / 旧缩放率) - 鼠标位置
+                const ratio = newScale / oldScale;
+                const newScrollLeft = (mouseX + this.previewEl.scrollLeft) * ratio - mouseX;
+                const newScrollTop = (mouseY + this.previewEl.scrollTop) * ratio - mouseY;
+
+                // 4. 应用新的缩放比例
+                this.currentScale = newScale;
                 this.updatePaperTransform();
+
+                // 5. 立即补偿滚动条位置，使鼠标所指的视觉锚点保持绝对静止
+                this.previewEl.scrollLeft = newScrollLeft;
+                this.previewEl.scrollTop = newScrollTop;
             }
         });
     }
@@ -568,7 +612,22 @@ class ExportSettingsModal extends Modal {
         this.paperEl.style.zoom = String(this.currentScale);
         this.paperEl.style.transform = `translate(${this.currentTranslateX}px, ${this.currentTranslateY}px)`;
     }
-    
+
+    autoFitScale() {
+        if (!this.previewEl || !this.paperEl) return;
+
+        // 容器可用宽度 = 容器实际宽度 - 左右 padding(80px) - 安全余量(20px)
+        const availableWidth = this.previewEl.clientWidth - 100;
+        if (availableWidth <= 0) return;
+
+        // 计算刚好能完整显示白纸的缩放比例
+        const targetScale = availableWidth / this.settings.pageWidth;
+
+        // 限制在允许的缩放范围内
+        this.currentScale = Math.max(0.3, Math.min(3.0, targetScale));
+        this.updatePaperTransform();
+    }
+
     updateFileBar() {
         if (!this.fileBarEl) return;
 
@@ -2118,19 +2177,21 @@ export class HtmlExporter {
                         }
                     });
 
-                    // C. 构建 DOM
+                    // C. 构建 DOM - 极简代码块
                     const wrapper = document.createElement('div');
                     wrapper.className = 'code-block-container';
-                    
-                    const controls = document.createElement('div');
-                    controls.className = 'code-controls';
 
+                    // 极简头部：左侧语言选择器，右侧复制按钮
+                    const header = document.createElement('div');
+                    header.className = 'code-header';
+
+                    // 左侧：语言选择器
                     const select = document.createElement('select');
                     select.className = 'lang-select';
-                    
+
                     const langOptions = [...commonLangs];
                     if (!langOptions.includes(currentLang)) langOptions.unshift(currentLang);
-                    
+
                     langOptions.forEach(lang => {
                         const option = document.createElement('option');
                         option.value = lang.toLowerCase();
@@ -2138,15 +2199,16 @@ export class HtmlExporter {
                         if (lang === currentLang) option.selected = true;
                         select.appendChild(option);
                     });
-                    controls.appendChild(select);
+                    header.appendChild(select);
 
+                    // 右侧：复制按钮
                     const copyBtn = document.createElement('button');
                     copyBtn.className = 'code-copy-btn';
-                    copyBtn.innerHTML = '复制';
-                    controls.appendChild(copyBtn);
+                    copyBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>复制';
+                    header.appendChild(copyBtn);
 
                     preEl.parentNode?.insertBefore(wrapper, preEl);
-                    wrapper.appendChild(controls);
+                    wrapper.appendChild(header);
                     wrapper.appendChild(preEl);
                 });
 
