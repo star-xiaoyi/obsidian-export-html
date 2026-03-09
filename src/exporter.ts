@@ -747,13 +747,16 @@ class FileSelectorModal extends Modal {
                 while ((match = wikiLinkRegex.exec(content)) !== null) {
                     const linkPath = match[1]?.trim();
                     if (!linkPath) continue;
-                    
+
                     // 处理链接路径，移除锚点 (#heading)
                     const cleanLinkPath = linkPath.split('#')[0];
                     if (!cleanLinkPath) continue;
-                    
+
+                    // 解码 URL 编码的路径（如 %20 转换为空格）
+                    const decodedLinkPath = decodeURIComponent(cleanLinkPath);
+
                     // 尝试查找对应的文件
-                    const targetFile = this.app.metadataCache.getFirstLinkpathDest(cleanLinkPath, file.path);
+                    const targetFile = this.app.metadataCache.getFirstLinkpathDest(decodedLinkPath, file.path);
 
                     if (targetFile && targetFile.extension === 'md') {
                         // 检查是否已经在选择列表中
@@ -772,16 +775,19 @@ class FileSelectorModal extends Modal {
                 while ((match = mdLinkRegex.exec(content)) !== null) {
                     const linkPath = match[2]?.trim();
                     if (!linkPath) continue;
-                    
+
                     // 跳过外部链接 (http/https)
                     if (linkPath.startsWith('http://') || linkPath.startsWith('https://')) continue;
-                    
+
                     // 处理链接路径，移除锚点 (#heading)
                     const cleanLinkPath = linkPath.split('#')[0];
                     if (!cleanLinkPath) continue;
-                    
+
+                    // 解码 URL 编码的路径（如 %20 转换为空格）
+                    const decodedLinkPath = decodeURIComponent(cleanLinkPath);
+
                     // 尝试查找对应的文件
-                    const targetFile = this.app.metadataCache.getFirstLinkpathDest(cleanLinkPath, file.path);
+                    const targetFile = this.app.metadataCache.getFirstLinkpathDest(decodedLinkPath, file.path);
 
                     if (targetFile && targetFile.extension === 'md') {
                         // 检查是否已经在选择列表中
@@ -1561,7 +1567,9 @@ export class HtmlExporter {
                     const src = embed.getAttribute('src');
                     if (!src) continue;
 
-                    const targetFile = this.app.metadataCache.getFirstLinkpathDest(src, file.path);
+                    // 解码 URL 编码的路径（如 %20 转换为空格）
+                    const decodedSrc = decodeURIComponent(src);
+                    const targetFile = this.app.metadataCache.getFirstLinkpathDest(decodedSrc, file.path);
                     if (!targetFile) continue;
 
                     const ext = targetFile.extension.toLowerCase();
@@ -1656,7 +1664,9 @@ export class HtmlExporter {
                 renderWrapper.querySelectorAll('a.internal-link').forEach(node => {
                     const link = node as HTMLElement;
                     const href = link.getAttribute('href');
-                    const target = this.app.metadataCache.getFirstLinkpathDest(href || "", file.path);
+                    // 解码 URL 编码的路径（如 %20 转换为空格）
+                    const decodedHref = href ? decodeURIComponent(href) : "";
+                    const target = this.app.metadataCache.getFirstLinkpathDest(decodedHref, file.path);
                     const targetIndex = files.findIndex(f => f === target);
                     if (targetIndex !== -1 && target) {
                         // 目标文件在导出列表中，使用页面内导航
