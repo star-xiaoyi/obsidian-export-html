@@ -289,7 +289,11 @@ class ExportSettingsModal extends Modal {
     async updatePreviewContent() {
         if (!this.paperEl || !this.previewEl) return;
 
-        // 1. 改为保存外层容器(previewEl)的当前滚动位置
+        // 1. 渲染前先隐藏纸张，取消所有过渡动画，防止闪烁
+        this.paperEl.style.transition = 'none';
+        this.paperEl.style.opacity = '0';
+
+        // 改为保存外层容器(previewEl)的当前滚动位置
         const savedScrollTop = this.previewEl.scrollTop;
         const savedScrollLeft = this.previewEl.scrollLeft;
 
@@ -381,26 +385,29 @@ class ExportSettingsModal extends Modal {
             });
         }
 
-        // 2. 恢复/初始化外层容器的滚动位置
+        // 2. 同步执行自适应缩放（必须放在 setTimeout 之外，在浏览器下一次重绘前完成计算）
+        if (savedScrollLeft === 0) {
+            this.autoFitScale();
+        }
+
+        // 3. 恢复滚动条位置并平滑显示内容
         setTimeout(() => {
             if (!this.previewEl) return;
 
             // 恢复垂直滚动
             this.previewEl.scrollTop = savedScrollTop;
 
-            // 如果是初始状态（之前没有横向滚动），强行自适应缩放并水平居中
+            // 恢复/初始化水平滚动
             if (savedScrollLeft === 0) {
-                this.autoFitScale(); // 新增：初始加载自适应大小
-
-                // 延迟 10ms 等待浏览器应用 zoom 属性撑开 scrollWidth 后再计算居中
-                setTimeout(() => {
-                    this.previewEl.scrollLeft = (this.previewEl.scrollWidth - this.previewEl.clientWidth) / 2;
-                }, 10);
+                this.previewEl.scrollLeft = (this.previewEl.scrollWidth - this.previewEl.clientWidth) / 2;
             } else {
-                // 否则恢复之前的横向滚动位置
                 this.previewEl.scrollLeft = savedScrollLeft;
             }
-        }, 50); // 将延时设为 50ms，确保 Markdown 渲染完全撑开容器后再计算居中
+
+            // 所有布局计算完毕，开启渐显动画，彻底告别闪烁
+            this.paperEl.style.transition = 'opacity 0.2s ease-in-out';
+            this.paperEl.style.opacity = '1';
+        }, 50);
     }
 
     // 解析 Frontmatter
